@@ -42,10 +42,8 @@ def inv(A, eps = 1e-4):
     L_inv = I
     for i in range(n-1):
         L[:, i+1:, i:i+1] = U[:, i+1:, i:i+1] / U[:, i:i+1, i:i+1]
-        L_inv[:, i+1:, :] = L_inv[:, i+1:, :] - L[:, i+1:, i:i+1].matmul(L_inv[:, i:i+1, :])
-        U[:, i+1:, :] = U[:, i+1:, :] - L[:, i+1:, i:i+1].matmul(U[:, i:i+1, :])
-
-    U_res = U.clone()
+        L_inv[:, i+1:, :] -= L[:, i+1:, i:i+1].matmul(L_inv[:, i:i+1, :])
+        U[:, i+1:, :] -= L[:, i+1:, i:i+1].matmul(U[:, i:i+1, :])
 
     # [U L^{-1}] -> [I U^{-1}L^{-1}] = [I (LU)^{-1}]
     A_inv = L_inv
@@ -54,11 +52,11 @@ def inv(A, eps = 1e-4):
         U[:, i:i+1, :] = U[:, i:i+1, :] / U[:, i:i+1, i:i+1]
 
         if i > 0:
-            A_inv[:, :i, :] = A_inv[:, :i, :] - U[:, :i, i:i+1].matmul(A_inv[:, i:i+1, :])
-            U[:, :i, :] = U[:, :i, :] - U[:, :i, i:i+1].matmul(U[:, i:i+1, :])
+            A_inv[:, :i, :] -= U[:, :i, i:i+1].matmul(A_inv[:, i:i+1, :])
+            U[:, :i, :] -= U[:, :i, i:i+1].matmul(U[:, i:i+1, :])
 
     A_inv_grad = - A_inv.matmul(A).matmul(A_inv)
-    return A_inv + A_inv_grad - A_inv_grad.data, L, U_res
+    return A_inv + A_inv_grad - A_inv_grad.data
 
 def modulo_convolve(w, s):
     # w: (bsz, N)
@@ -340,37 +338,37 @@ if __name__ == '__main__':
     # print(inv(A)[0])
     # print(torch.inverse(A[0]))
 
-    # for _ in range(100):
-    #     A = torch.randn(1, 3, 3)
-    #     print(inv(A).unsqueeze(0))
-    #     print(torch.inverse(A[0]))
-    #     cost = torch.norm(inv(A).unsqueeze(0) - torch.inverse(A[0])).sum()
-    #     print(cost)
+    for _ in range(100):
+        A = torch.randn(1, 3, 3)
+        print(inv(A).unsqueeze(0))
+        print(torch.inverse(A[0]))
+        cost = torch.norm(inv(A).unsqueeze(0) - torch.inverse(A[0])).sum()
+        print(cost)
 
-    np.set_printoptions(precision=4)
-
-    A = torch.\
-        tensor([[[ 0.,  2.,  9.],
-         [ 4.,  9.,  4.],
-         [ 3.,  9.,  6.]]])
-
-    A_inv, L, U = inv(A)
-    print(A_inv)
-    print('L:')
-    print(L)
-    print('U:')
-    print(U)
-
-    print('---'*20)
-    L, U = LU(A)
-    print('L:')
-    print(L)
-    print('U:')
-    print(U)
-
-    print('---' * 20)
-    A_inv = torch.inverse(A[0])
-    print(A_inv)
-
-    print('---' * 20)
-    LU_deco_inverse(np.mat(A.squeeze(0).data.numpy()))
+    # np.set_printoptions(precision=4)
+    #
+    # A = torch.\
+    #     tensor([[[ 0.,  2.,  9.],
+    #      [ 4.,  9.,  4.],
+    #      [ 3.,  9.,  6.]]])
+    #
+    # A_inv, L, U = inv(A)
+    # print(A_inv)
+    # print('L:')
+    # print(L)
+    # print('U:')
+    # print(U)
+    #
+    # print('---'*20)
+    # L, U = LU(A)
+    # print('L:')
+    # print(L)
+    # print('U:')
+    # print(U)
+    #
+    # print('---' * 20)
+    # A_inv = torch.inverse(A[0])
+    # print(A_inv)
+    #
+    # print('---' * 20)
+    # LU_deco_inverse(np.mat(A.squeeze(0).data.numpy()))

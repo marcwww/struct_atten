@@ -33,6 +33,8 @@ class MatrixTree(nn.Module):
         LL_inv_diag = LL_inv[:, range(seq_len), range(seq_len)].unsqueeze(-1)
         term1 = (A.transpose(1, 2) * LL_inv_diag).transpose(1, 2)
         term2 = A * LL_inv.transpose(1, 2)
+        term1[:, :, 0] = 0
+        term2[:, 0, :] = 0
         d = term1 - term2
         d = torch.cat([d0, d], dim=1)
 
