@@ -4,6 +4,7 @@ import training
 import argparse
 import opts
 import utils
+import os
 import torch
 from torch import nn
 from torch import optim
@@ -24,9 +25,10 @@ if __name__ == '__main__':
     utils.init_seed(opt.seed)
 
     iters = iter.build_iters(ftrain=opt.ftrain,
-                     fvalid=opt.fvalid,
-                     bsz=opt.bsz,
-                     device=opt.gpu)
+                             fvalid=opt.fvalid,
+                             bsz=opt.bsz,
+                             device=opt.gpu,
+                             pretrain=opt.pretrain)
 
     location = opt.gpu if torch.cuda.is_available() and opt.gpu != -1 else 'cpu'
     device = torch.device(location)
@@ -37,6 +39,9 @@ if __name__ == '__main__':
                              embedding_dim=opt.edim,
                              padding_idx=SEQ.vocab.stoi[PAD])
 
+    if opt.pretrain:
+        embedding.weight.data.copy_(SEQ.vocab.vectors)
+
     encoder = nets.StructLSTM(opt.edim,
                               opt.hdim,
                               opt.sema_dim,
@@ -44,12 +49,27 @@ if __name__ == '__main__':
                               opt.dropout,
                               SEQ.vocab.stoi[PAD])
 
-    model = nets.StructNLI(encoder, embedding).to(device)
+    model = nets.StructNLI(encoder, embedding, opt.dropout).to(device)
+    utils.init_model(model)
+
+    if opt.fload is not None:
+        model_fname = opt.fload
+        location = {'cuda:' + str(opt.gpu): 'cuda:' + str(opt.gpu)} if opt.gpu != -1 else 'cpu'
+        model_path = os.path.join(RES, model_fname)
+        model_dict = torch.load(model_path, map_location=location)
+        model.load_state_dict(model_dict)
+        print('Loaded from ' + model_path)
+
     criterion = nn.CrossEntropyLoss()
-    # optimizer = optim.Adagrad(params=filter(lambda p: p.requires_grad, model.parameters()),
-    #                        lr=opt.lr)
-    optimizer = optim.Adam(params=filter(lambda p: p.requires_grad, model.parameters()),
-                              lr=opt.lr)
+
+    optimizer = None
+    if opt.optim == 'adagrad':
+        optimizer = optim.Adagrad(params=filter(lambda p: p.requires_grad, model.parameters()),
+                               lr=opt.lr)
+
+    if opt.optim == 'adam':
+        optimizer = optim.Adam(params=filter(lambda p: p.requires_grad, model.parameters()),
+                                  lr=opt.lr)
 
     param_str = utils.param_str(opt)
     for key, val in param_str.items():

@@ -13,14 +13,20 @@ def model_opts(parser):
 def train_opts(parser):
     group = parser.add_argument_group('train')
     group.add_argument('-seed', type=int, default=1000)
-    group.add_argument('-bsz', type=int, default=32)
-    # group.add_argument('-lr', type=float, default=5e-2)
-    # group.add_argument('-lr', type=float, default=2e-4)
+    group.add_argument('-bsz', type=int, default=64)
+    # group.add_argument('-bsz', type=int, default=32)
     group.add_argument('-lr', type=float, default=1e-4)
+    # group.add_argument('-lr', type=float, default=0.05)
     group.add_argument('-ftrain', type=str, default=os.path.join(DATA, 'snli_1.0_train.txt'))
     group.add_argument('-fvalid', type=str, default=os.path.join(DATA, 'snli_1.0_dev.txt'))
     group.add_argument('-gpu', type=int, default=-1)
     group.add_argument('-nepoch', type=int, default=10)
     group.add_argument('-save_per', type=int, default=1)
+    # group.add_argument('-fload', type=str, default='struct_atten-1536317287.model')
+    group.add_argument('-fload', type=str, default=None)
+    # group.add_argument('-pretrain', type=str, default='glove.840B.300d')
+    group.add_argument('-pretrain', type=str, default=None)
+    # group.add_argument('-optim', type=str, default='adagrad')
+    group.add_argument('-optim', type=str, default='adam')
 
 

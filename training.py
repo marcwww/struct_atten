@@ -36,6 +36,7 @@ def train(model, iters, opt, criterion, optim):
         f.write(str(utils.param_str(opt)) + '\n')
 
     losses = []
+    best_performance = 0
     for epoch in range(opt.nepoch):
         for i, batch in enumerate(train_iter):
             seq1, seq2, lbl = batch.seq1, batch.seq2, batch.lbl
@@ -65,8 +66,9 @@ def train(model, iters, opt, criterion, optim):
                 with open(log_path, 'a+') as f:
                     f.write(log_str + '\n')
 
-        if (epoch + 1) % opt.save_per == 0:
-            model_fname = basename + ".model"
-            save_path = os.path.join(RES, model_fname)
-            print('Saving to ' + save_path)
-            torch.save(model.state_dict(), save_path)
+                if accurracy > best_performance:
+                    best_performance = accurracy
+                    model_fname = basename + ".model"
+                    save_path = os.path.join(RES, model_fname)
+                    print('Saving to ' + save_path)
+                    torch.save(model.state_dict(), save_path)

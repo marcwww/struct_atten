@@ -69,11 +69,13 @@ class StructLSTM(nn.Module):
         self.w_root = nn.Linear(stru_dim, 1, bias=False)
         self.root_emb = nn.Parameter(torch.randn(sema_dim))
         self.w_r = nn.Linear(sema_dim * 2, sema_dim)
+        self.eps = 1e-5
 
+    def forward(self, input, mask):
 
-    def forward(self, input):
         # output: (seq_len, bsz, hdim)
         output, h = self.bilstm(input)
+        output = output * mask.unsqueeze(-1)
 
         output_forward = output[:,:,:self.hdim//2]
         output_backward = output[:,:,self.hdim//2:]
@@ -99,13 +101,12 @@ class StructLSTM(nn.Module):
 
         seq_len = f.shape[1]
         f[:, range(seq_len), range(seq_len)] = 0
-        f = f.exp()
-        f_r = f_r.exp()
+        f = f.exp() + self.eps
+        f_r = f_r.exp() + self.eps
 
         # a: (bsz, seq_len + 1, seq_len)
         a = self.struct_atten(f, f_r)
 
-        # a = torch.cat([f_r, f], dim=-1).transpose(1, 2)
         # a_p: (bsz, seq_len, seq_len + 1)
         a_p = a.transpose(1, 2)
 
@@ -118,6 +119,7 @@ class StructLSTM(nn.Module):
         # output: (seq_len, bsz, sema_dim)
         output = F.leaky_relu(self.w_r(torch.cat([vec_sema, p], dim=-1)))
         output = output.transpose(0, 1)
+        output = output * mask.unsqueeze(-1)
 
         return output
 
@@ -128,14 +130,31 @@ class InterAttention(nn.Module):
         self.mlp = nn.Sequential(nn.Linear(sema_dim, sema_dim),
                                  nn.ReLU(),
                                  nn.Linear(sema_dim, sema_dim))
+        self.inf = -1e10
 
-    def forward(self, r1, r2):
+    def forward(self, r1, r2, mask1, mask2):
         # r: (bsz, seq_len, sema_dim)
         r1 = self.mlp(r1).transpose(0, 1)
         r2 = self.mlp(r2).transpose(0, 1)
 
+        mask1_ex = mask1.float().transpose(0, 1).unsqueeze(-1).expand_as(r1)
+        mask2_ex = mask2.float().transpose(0, 1).unsqueeze(-1).expand_as(r2)
+
+        r1 = r1 * mask1_ex
+        r2 = r2 * mask2_ex
+
+        len_total1 = r1.shape[1]
+        len_total2 = r2.shape[1]
+        # lens: (bsz,)
+        lens1 = len_total1 - mask1.sum(dim=0)
+        lens2 = len_total2 - mask2.sum(dim=0)
+
+        mask = torch.matmul(mask1_ex, mask2_ex.transpose(1, 2))
+        mask.masked_fill_(mask.ne(1), self.inf)
+
         # o: (bsz, seq_len1, seq_len2)
         o = torch.matmul(r1, r2.transpose(1, 2))
+        o = o * mask
         o1 = F.softmax(o, dim=1)
         o2 = F.softmax(o, dim=0)
 
@@ -144,34 +163,44 @@ class InterAttention(nn.Module):
         r2_c = torch.matmul(o2.transpose(1, 2), r1)
 
         # r_pooling: (bsz, sema_dim)
-        r1_pooling = torch.cat([r1, r1_c], dim=-1).sum(1)/r1.shape[1]
-        r2_pooling = torch.cat([r2, r2_c], dim=-1).sum(1)/r2.shape[1]
+        # for the processing above, no mask needed for these two steps
+        r1_pooling = torch.cat([r1, r1_c], dim=-1).sum(1) / lens1.float().unsqueeze(-1)
+        r2_pooling = torch.cat([r2, r2_c], dim=-1).sum(1) / lens2.float().unsqueeze(-1)
 
         return r1_pooling, r2_pooling
 
 class StructNLI(nn.Module):
 
-    def __init__(self, encoder, embedding):
+    def __init__(self, encoder, embedding, dropout):
 
         super(StructNLI, self).__init__()
         self.encoder = encoder
         self.embedding = embedding
+        self.padding_idx = encoder.padding_idx
         sema_dim = encoder.sema_dim
         self.mlp = nn.Sequential(nn.Linear(sema_dim * 4, sema_dim),
                                  nn.ReLU(),
                                  nn.Linear(sema_dim, 3))
         self.inter_atten = InterAttention(sema_dim)
+        self.dropout = nn.Dropout(dropout)
 
     def forward(self, seq1, seq2):
         embs1 = self.embedding(seq1)
         embs2 = self.embedding(seq2)
 
-        # r: (seq_len, bsz, sema_dim)
-        r1 = self.encoder(embs1)
-        r2 = self.encoder(embs2)
+        embs1 = self.dropout(embs1)
+        embs2 = self.dropout(embs2)
 
+        mask1 = seq1.data.eq(self.padding_idx)
+        mask2 = seq2.data.eq(self.padding_idx)
+
+        # r: (seq_len, bsz, sema_dim)
+        r1 = self.encoder(embs1, mask1.float())
+        r2 = self.encoder(embs2, mask2.float())
+
+        # mask for inter_atten...
         # r_pooling: (bsz, sema_dim * 2)
-        r1_pooling, r2_pooling = self.inter_atten(r1, r2)
+        r1_pooling, r2_pooling = self.inter_atten(r1, r2, mask1, mask2)
         r = torch.cat([r1_pooling, r2_pooling], dim=-1)
 
         # output: (bsz, 3)

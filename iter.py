@@ -34,7 +34,7 @@ def load_examples(fname):
 
     return examples
 
-def build_iters(ftrain, fvalid, bsz, device):
+def build_iters(ftrain, fvalid, bsz, device, pretrain):
 
     examples_train = load_examples(ftrain)
     print('Done loading.')
@@ -48,7 +48,7 @@ def build_iters(ftrain, fvalid, bsz, device):
     train = Dataset(examples_train, fields=[('seq1', SEQ),
                                             ('seq2', SEQ),
                                             ('lbl', LBL)])
-    SEQ.build_vocab(train)
+    SEQ.build_vocab(train, vectors=pretrain)
     examples_valid = load_examples(fvalid)
     valid = Dataset(examples_valid, fields=[('seq1', SEQ),
                                             ('seq2', SEQ),
