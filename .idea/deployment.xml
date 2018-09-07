@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="PublishConfigData" autoUpload="Always" serverName="kxwang@172.18.31.58:22">
+    <serverData>
+      <paths name="Copy of project-level server 'cip58'">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/exp/struct_atten" local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="cip58">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/exp/struct_atten" local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="kxwang@172.18.31.58:22">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/home/kxwang/exp/struct_atten" local="$PROJECT_DIR$" />
+          </mappings>
+        </serverdata>
+      </paths>
+    </serverData>
+    <option name="myAutoUpload" value="ALWAYS" />
+  </component>
+</project>
