@@ -1,4 +1,5 @@
 import iter
+import nets_no_mask
 import nets
 import training
 import argparse
@@ -42,14 +43,26 @@ if __name__ == '__main__':
     if opt.pretrain:
         embedding.weight.data.copy_(SEQ.vocab.vectors)
 
-    encoder = nets.StructLSTM(opt.edim,
-                              opt.hdim,
-                              opt.sema_dim,
-                              opt.stru_dim,
-                              opt.dropout,
-                              SEQ.vocab.stoi[PAD])
+    if opt.mask == 'no_mask':
+        encoder = nets_no_mask.StructLSTM(opt.edim,
+                                  opt.hdim,
+                                  opt.sema_dim,
+                                  opt.stru_dim,
+                                  opt.dropout,
+                                  SEQ.vocab.stoi[PAD])
 
-    model = nets.StructNLI(encoder, embedding, opt.dropout).to(device)
+        model = nets_no_mask.StructNLI(encoder, embedding, opt.dropout).to(device)
+
+    if opt.mask == 'mask':
+        encoder = nets.StructLSTM(opt.edim,
+                                          opt.hdim,
+                                          opt.sema_dim,
+                                          opt.stru_dim,
+                                          opt.dropout,
+                                          SEQ.vocab.stoi[PAD])
+
+        model = nets.StructNLI(encoder, embedding, opt.dropout).to(device)
+
     utils.init_model(model)
 
     if opt.fload is not None:

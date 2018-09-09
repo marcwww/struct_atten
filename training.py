@@ -44,6 +44,9 @@ def train(model, iters, opt, criterion, optim):
             model.train()
             model.zero_grad()
             output = model(seq1, seq2)
+            if i == 2:
+                exit()
+
             loss = criterion(output.view(-1, len(LBL)), lbl)
             losses.append(loss.item())
             loss.backward()

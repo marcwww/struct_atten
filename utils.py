@@ -6,9 +6,20 @@ from torch.nn import functional as F
 import logging
 import random
 import time
+import numpy as np
+from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 import crash_on_ipy
 
 LOGGER = logging.getLogger(__name__)
+
+def run_rnn(input, rnn, lengths):
+    sorted_idx = np.argsort(lengths)[::-1].tolist()
+    rnn_input = pack_padded_sequence(input[sorted_idx], lengths[sorted_idx], batch_first=True)
+    rnn_out, _ = rnn(rnn_input)  # (bsize, ntoken, hidsize*2)
+    rnn_out, _ = pad_packed_sequence(rnn_out, batch_first=True)
+    rnn_out = rnn_out[np.argsort(sorted_idx).tolist()]
+
+    return rnn_out
 
 def LU(A, eps = 1e-10):
     assert len(A.shape) == 3 and \
