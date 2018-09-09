@@ -73,6 +73,8 @@ class StructLSTM(nn.Module):
         self.inf = -1e10
 
     def forward(self, input, mask):
+        print('--' * 10 + 'enc' + '--' * 10)
+
         lengths = (mask.sum(dim=0).squeeze(-1)).data.cpu().numpy().astype('int')
         output = utils.run_rnn(input.transpose(0, 1), self.bilstm, lengths)
 
@@ -88,6 +90,8 @@ class StructLSTM(nn.Module):
                              output_backward[:,:,:self.sema_dim//2]], dim=-1)
         vec_stru = torch.cat([output_forward[:,:,self.sema_dim//2:],
                              output_backward[:,:,self.sema_dim//2:]], dim=-1)
+        print('1:', vec_sema[1])
+        print('1:', vec_stru[1])
 
         # tp/tc: (bsz, seq_len, stru_dim)
         tp = F.tanh(self.d2tp(vec_stru))
@@ -95,19 +99,27 @@ class StructLSTM(nn.Module):
 
         # mask: (seq_len, bsz, 1)
         mask_sq = mask.transpose(0, 1).matmul(mask.transpose(0, 1).transpose(1, 2))
+        print('2:', tp[1])
+        print('2:', tc[1])
 
         # f: (bsz, seq_len, seq_len)
         # f_r: (bsz, seq_len, 1)
         f = tp.matmul(self.w_a). \
             matmul(tc.transpose(1, 2))
         f_r = self.w_root(vec_stru)
+        print('3:', f[1])
+        print('3:', f_r[1])
+
         f = f.exp() * mask_sq
         f_r  = f_r.exp() * mask.transpose(0, 1)
         seq_len = f.shape[1]
         f[:, range(seq_len), range(seq_len)] = 0
+        print('4:', f[1])
+        print('4:', f_r[1])
 
         # a: (bsz, seq_len + 1, seq_len)
         a = self.struct_atten(f + self.eps, f_r + self.eps)
+        print('4:', a[1])
 
         # a_p: (bsz, seq_len, seq_len + 1)
         a_p = a.transpose(1, 2)
@@ -115,6 +127,7 @@ class StructLSTM(nn.Module):
         root_embs = self.root_emb.expand_as(vec_sema[:, :1, :])
         # vec_sem_root: (bsz, seq_len + 1, sema_dim)
         vec_sem_root = torch.cat([root_embs, vec_sema], dim=1)
+        print('5:', vec_sem_root[1])
 
         # p: (bsz, seq_len, sema_dim)
         p = torch.matmul(a_p, vec_sem_root)
@@ -122,6 +135,7 @@ class StructLSTM(nn.Module):
         output = F.leaky_relu(self.w_r(torch.cat([vec_sema, p], dim=-1)))
         output = output.transpose(0, 1)
         output = output * mask
+        print('6:', output[:,1])
 
         return output
 
@@ -135,15 +149,20 @@ class InterAttention(nn.Module):
         self.inf = -1e10
 
     def forward(self, r1, r2, mask1, mask2):
+        print('--'*10 + 'atten' + '--'*10)
         # r: (bsz, seq_len, sema_dim)
         r1 = self.mlp(r1).transpose(0, 1)
         r2 = self.mlp(r2).transpose(0, 1)
+        print('1:', r1[1])
+        print('1:', r2[1])
 
         mask1_ex = mask1.float().transpose(0, 1).expand_as(r1)
         mask2_ex = mask2.float().transpose(0, 1).expand_as(r2)
 
         r1 = r1 * mask1_ex
         r2 = r2 * mask2_ex
+        print('2:', r1[1])
+        print('2:', r2[1])
 
         # lens: (bsz,)
         lens1 = mask1.sum(dim=0)
@@ -157,19 +176,26 @@ class InterAttention(nn.Module):
         # o: (bsz, seq_len1, seq_len2)
         o = torch.matmul(r1, r2.transpose(1, 2))
         o = o + mask_inf
+        print('3:', o[1])
 
         mask_matrix = mask.gt(0)
         o1 = F.softmax(o, dim=2) * mask_matrix.float()
         o2 = F.softmax(o, dim=1) * mask_matrix.float()
+        print('o1:', o1[1])
+        print('o2:', o2[1])
 
         # r_c: (bsz, seq_len, sema_dim)
         r1_c = torch.matmul(o1, r2)
         r2_c = torch.matmul(o2.transpose(1, 2), r1)
+        print('4:', r1_c[1])
+        print('4:', r2_c[1])
 
         # r_pooling: (bsz, sema_dim)
         # for the processing above, no mask needed for these two steps
         r1_pooling = torch.cat([r1, r1_c], dim=-1).sum(1) / lens1.float()
         r2_pooling = torch.cat([r2, r2_c], dim=-1).sum(1) / lens2.float()
+        print('5:', r1_pooling[1])
+        print('5:', r2_pooling[1])
 
         return r1_pooling, r2_pooling
 
@@ -189,6 +215,9 @@ class StructNLI(nn.Module):
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, seq1, seq2):
+        print('seq1:', seq1[:,1])
+        print('seq2:', seq2[:,1])
+
         embs1 = self.embedding(seq1)
         embs2 = self.embedding(seq2)
 
@@ -202,14 +231,20 @@ class StructNLI(nn.Module):
         # r: (seq_len, bsz, sema_dim)
         r1 = self.encoder(embs1, mask1.float())
         r2 = self.encoder(embs2, mask2.float())
+        print('r1:', r1[:,1])
+        print('r2:', r2[:,1])
 
         # mask for inter_atten...
         # r_pooling: (bsz, sema_dim * 2)
         r1_pooling, r2_pooling = self.inter_atten(r1, r2, mask1, mask2)
         r = torch.cat([r1_pooling, r2_pooling], dim=-1)
+        print('r:', r[1])
 
         # output: (bsz, 3)
         output = self.mlp(r)
+        print('output:', output[1])
+        exit()
+
         return output
 
 if __name__ == "__main__":
