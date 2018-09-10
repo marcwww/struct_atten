@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="PublishConfigData" autoUpload="Always" serverName="kxwang@172.18.31.58:22">
+  <component name="PublishConfigData" autoUpload="Always" serverName="cip58">
     <serverData>
       <paths name="Copy of project-level server 'cip58'">
         <serverdata>
@@ -16,7 +16,14 @@
           </mappings>
         </serverdata>
       </paths>
-      <paths name="kxwang@172.18.31.58:22">
+      <paths name="cip64">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/home/snwang/exp_wkx/struct_atten" local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="kxwang@172.18.31.58:22 (1)">
         <serverdata>
           <mappings>
             <mapping deploy="/home/kxwang/exp/struct_atten" local="$PROJECT_DIR$" />

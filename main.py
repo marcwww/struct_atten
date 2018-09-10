@@ -40,9 +40,7 @@ if __name__ == '__main__':
                              embedding_dim=opt.edim,
                              padding_idx=SEQ.vocab.stoi[PAD])
 
-    if opt.pretrain:
-        embedding.weight.data.copy_(SEQ.vocab.vectors)
-
+    model = None
     if opt.mask == 'no_mask':
         encoder = nets_no_mask.StructLSTM(opt.edim,
                                   opt.hdim,
@@ -64,6 +62,9 @@ if __name__ == '__main__':
         model = nets.StructNLI(encoder, embedding, opt.dropout).to(device)
 
     utils.init_model(model)
+
+    if opt.pretrain:
+        model.embedding.weight.data.copy_(SEQ.vocab.vectors)
 
     if opt.fload is not None:
         model_fname = opt.fload

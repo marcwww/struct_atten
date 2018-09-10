@@ -10,6 +10,19 @@
           <option name="port" value="22" />
         </fileTransfer>
       </webServer>
+      <webServer id="1ce703ab-4c63-46a4-b7c4-41063481c3db" name="kxwang@172.18.31.58:22 (1)" url="http:///">
+        <fileTransfer host="172.18.31.58" port="22" accessType="SFTP" authAgent="true">
+          <option name="port" value="22" />
+        </fileTransfer>
+      </webServer>
+      <webServer id="0fd6ad80-da45-40a9-a978-76208d18ff85" name="cip64" url="http://172.18.31.64">
+        <fileTransfer host="172.18.31.64" port="22" accessType="SFTP">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" shareSSLContext="true" />
+          </advancedOptions>
+          <option name="port" value="22" />
+        </fileTransfer>
+      </webServer>
     </option>
   </component>
 </project>

@@ -3,6 +3,10 @@ import pickle
 import os
 from macros import *
 from torchtext.data import Dataset
+# from nltk import word_tokenize
+import spacy
+from spacy.lang.en import English
+spa_tok = English().Defaults.create_tokenizer()
 
 class Example(object):
 
@@ -12,7 +16,8 @@ class Example(object):
         self.lbl = lbl
 
     def tokenizer(self, seq):
-        return list(seq)
+        return [sent.string.strip() for sent in spa_tok(seq)]
+        # return word_tokenize(seq)
 
 def load_examples(fname):
     examples = []
@@ -75,4 +80,7 @@ if __name__ == '__main__':
     ftrain = os.path.join(DATA, 'snli_1.0_train.txt')
     fvalid = os.path.join(DATA, 'snli_1.0_dev.txt')
 
-    iters = build_iters(ftrain, fvalid, 32, -1)
+    # iters = build_iters(ftrain, fvalid, 32, -1)
+
+    nlp = spacy.load('en')
+    tok = English().Defaults.create_tokenizer(nlp.vocab)
