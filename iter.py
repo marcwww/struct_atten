@@ -39,7 +39,7 @@ def load_examples(fname):
 
     return examples
 
-def build_iters(ftrain, fvalid, bsz, device, pretrain):
+def build_iters(ftrain, fvalid, ftest, bsz, device, pretrain):
 
     examples_train = load_examples(ftrain)
     print('Done loading.')
@@ -59,6 +59,11 @@ def build_iters(ftrain, fvalid, bsz, device, pretrain):
                                             ('seq2', SEQ),
                                             ('lbl', LBL)])
 
+    examples_test = load_examples(ftest)
+    test = Dataset(examples_test, fields=[('seq1', SEQ),
+                                            ('seq2', SEQ),
+                                            ('lbl', LBL)])
+
     train_iter = torchtext.data.Iterator(train, batch_size=bsz,
                                          sort=False, repeat=False,
                                          sort_key=lambda x: len(x.seq1),
@@ -69,12 +74,17 @@ def build_iters(ftrain, fvalid, bsz, device, pretrain):
                                          sort_key=lambda x: len(x.seq1),
                                          sort_within_batch=True,
                                          device=device)
+    test_iter = torchtext.data.Iterator(test, batch_size=bsz,
+                                         sort=False, repeat=False,
+                                         sort_key=lambda x: len(x.seq1),
+                                         sort_within_batch=True,
+                                         device=device)
 
     return {'train_iter': train_iter,
             'valid_iter': valid_iter,
+            'test_iter': test_iter,
             'SEQ': SEQ,
             'LBL': LBL}
-
 
 if __name__ == '__main__':
     ftrain = os.path.join(DATA, 'snli_1.0_train.txt')

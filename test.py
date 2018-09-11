@@ -90,5 +90,4 @@ if __name__ == '__main__':
     for key, val in param_str.items():
         print(str(key) + ': ' + str(val))
 
-    training.train(model, iters, opt, criterion, optimizer)
-
+    print('Test accuracy:', training.valid(model, iters['test_iter']))
