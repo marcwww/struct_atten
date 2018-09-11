@@ -184,6 +184,8 @@ def init_seed(seed=None):
     np.random.seed(seed)
     torch.manual_seed(seed)
     random.seed(seed)
+    if torch.cuda.is_available():
+        torch.backends.cudnn.deterministic = True
 
 def gumbel_softmax_sample(logits, tau, hard, eps=1e-10):
 

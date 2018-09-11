@@ -16,6 +16,7 @@ class Example(object):
         self.lbl = lbl
 
     def tokenizer(self, seq):
+        # return seq.split()
         return [sent.string.strip() for sent in spa_tok(seq)]
         # return word_tokenize(seq)
 

@@ -36,9 +36,8 @@ class MatrixTree(nn.Module):
         term1[:, :, 0] = 0
         term2[:, 0, :] = 0
         d = term1 - term2
-        d = torch.cat([d0, d], dim=1)
 
-        return d
+        return d0, d
 
 
 class StructLSTM(nn.Module):
@@ -68,7 +67,7 @@ class StructLSTM(nn.Module):
         self.w_a = nn.Parameter(torch.randn(stru_dim, stru_dim))
         self.w_root = nn.Linear(stru_dim, 1, bias=False)
         self.root_emb = nn.Parameter(torch.randn(sema_dim))
-        self.w_r = nn.Linear(sema_dim * 2, sema_dim)
+        self.w_r = nn.Linear(sema_dim * 3, sema_dim)
         self.eps = 1e-5
         self.inf = -1e10
 
@@ -76,14 +75,12 @@ class StructLSTM(nn.Module):
         lengths = (mask.sum(dim=0).squeeze(-1)).data.cpu().numpy().astype('int')
         output = utils.run_rnn(input.transpose(0, 1), self.bilstm, lengths)
 
-        # output: (seq_len, bsz, hdim)
-        # output, h = self.bilstm(input)
-        # output = output * mask
+        # output: (bsz, seq_len, hdim)
         output_forward = output[:,:,:self.hdim//2]
         output_backward = output[:,:,self.hdim//2:]
 
-        # vec_sema: (seq_len, bsz, sema_dim)
-        # vec_stru: (seq_len, bsz, stru_dim)
+        # vec_sema: (bsz, seq_len, sema_dim)
+        # vec_stru: (bsz, seq_len, stru_dim)
         vec_sema = torch.cat([output_forward[:,:,:self.sema_dim//2],
                              output_backward[:,:,:self.sema_dim//2]], dim=-1)
         vec_stru = torch.cat([output_forward[:,:,self.sema_dim//2:],
@@ -106,20 +103,25 @@ class StructLSTM(nn.Module):
         seq_len = f.shape[1]
         f[:, range(seq_len), range(seq_len)] = 0
 
-        # a: (bsz, seq_len + 1, seq_len)
-        a = self.struct_atten(f + self.eps, f_r + self.eps)
+        # a0: (bsz, 1, seq_len)
+        # a: (bsz, seq_len, seq_len)
+        a0, a = self.struct_atten(f + self.eps, f_r + self.eps)
+        a_c = a
 
         # a_p: (bsz, seq_len, seq_len + 1)
-        a_p = a.transpose(1, 2)
+        a_p = torch.cat([a0, a], dim=1).transpose(1, 2)
 
         root_embs = self.root_emb.expand_as(vec_sema[:, :1, :])
         # vec_sem_root: (bsz, seq_len + 1, sema_dim)
         vec_sem_root = torch.cat([root_embs, vec_sema], dim=1)
 
+        # c: (bsz, seq_len, sema_dim)
         # p: (bsz, seq_len, sema_dim)
+        c = torch.matmul(a_c, vec_sema)
         p = torch.matmul(a_p, vec_sem_root)
+
         # output: (seq_len, bsz, sema_dim)
-        output = F.leaky_relu(self.w_r(torch.cat([vec_sema, p], dim=-1)))
+        output = F.leaky_relu(self.w_r(torch.cat([vec_sema, p, c], dim=-1)))
         output = output.transpose(0, 1)
         output = output * mask
 
