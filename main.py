@@ -30,7 +30,8 @@ if __name__ == '__main__':
                              ftest=opt.ftest,
                              bsz=opt.bsz,
                              device=opt.gpu,
-                             pretrain=opt.pretrain)
+                             pretrain=opt.pretrain,
+                             min_freq=opt.min_freq)
 
     location = opt.gpu if torch.cuda.is_available() and opt.gpu != -1 else 'cpu'
     device = torch.device(location)
@@ -80,11 +81,13 @@ if __name__ == '__main__':
     optimizer = None
     if opt.optim == 'adagrad':
         optimizer = optim.Adagrad(params=filter(lambda p: p.requires_grad, model.parameters()),
-                               lr=opt.lr)
+                                  lr=opt.lr,
+                                  weight_decay=opt.wdecay)
 
     if opt.optim == 'adam':
         optimizer = optim.Adam(params=filter(lambda p: p.requires_grad, model.parameters()),
-                                  lr=opt.lr)
+                               lr=opt.lr,
+                               weight_decay=opt.wdecay)
 
     param_str = utils.param_str(opt)
     for key, val in param_str.items():

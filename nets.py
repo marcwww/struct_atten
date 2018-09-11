@@ -121,7 +121,8 @@ class StructLSTM(nn.Module):
         p = torch.matmul(a_p, vec_sem_root)
 
         # output: (seq_len, bsz, sema_dim)
-        output = F.leaky_relu(self.w_r(torch.cat([vec_sema, p, c], dim=-1)))
+        # output = F.leaky_relu(self.w_r(torch.cat([vec_sema, p, c], dim=-1)))
+        output = F.tanh(self.w_r(torch.cat([vec_sema, p, c], dim=-1)))
         output = output.transpose(0, 1)
         output = output * mask
 
@@ -134,6 +135,9 @@ class InterAttention(nn.Module):
         self.mlp = nn.Sequential(nn.Linear(sema_dim, sema_dim),
                                  nn.ReLU(),
                                  nn.Linear(sema_dim, sema_dim))
+        self.compare = nn.Sequential(nn.Linear(sema_dim * 2, sema_dim),
+                                     nn.ReLU(),
+                                     nn.Linear(sema_dim, sema_dim))
         self.inf = -1e10
 
     def forward(self, r1, r2, mask1, mask2):
@@ -168,10 +172,17 @@ class InterAttention(nn.Module):
         r1_c = torch.matmul(o1, r2)
         r2_c = torch.matmul(o2.transpose(1, 2), r1)
 
+        # r_compare: (bsz, seq_len, sema_dim)
+        r1_compare = self.compare(torch.cat([r1, r1_c], dim=-1))
+        r2_compare = self.compare(torch.cat([r2, r2_c], dim=-1))
+
+        # new mask for concatted vectors
+        mask1_ex = mask1.float().transpose(0, 1).expand_as(r1_compare)
+        mask2_ex = mask2.float().transpose(0, 1).expand_as(r2_compare)
+
         # r_pooling: (bsz, sema_dim)
-        # for the processing above, no mask needed for these two steps
-        r1_pooling = torch.cat([r1, r1_c], dim=-1).sum(1) / lens1.float()
-        r2_pooling = torch.cat([r2, r2_c], dim=-1).sum(1) / lens2.float()
+        r1_pooling = (r1_compare * mask1_ex).sum(1) / lens1.float()
+        r2_pooling = (r2_compare * mask2_ex).sum(1) / lens2.float()
 
         return r1_pooling, r2_pooling
 
@@ -184,7 +195,7 @@ class StructNLI(nn.Module):
         self.embedding = embedding
         self.padding_idx = encoder.padding_idx
         sema_dim = encoder.sema_dim
-        self.mlp = nn.Sequential(nn.Linear(sema_dim * 4, sema_dim),
+        self.mlp = nn.Sequential(nn.Linear(sema_dim * 2, sema_dim),
                                  nn.ReLU(),
                                  nn.Linear(sema_dim, 3))
         self.inter_atten = InterAttention(sema_dim)
