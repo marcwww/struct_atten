@@ -254,6 +254,15 @@ def param_str(opt):
 def time_int():
     return int(time.time())
 
+def load_pretrain(embed, vectors):
+    mask = vectors.ne(0).sum(-1).ne(0)
+    idices = []
+    for idx, mask_val in enumerate(mask):
+        if mask_val != 0:
+            idices.append(idx)
+    embed.weight.data[idices] = \
+        vectors[idices].to(embed.weight.device)
+
 if __name__ == '__main__':
     # up, down = shift_matrix(3)
     # x = np.array([[0,1,2]]).transpose()

@@ -66,7 +66,8 @@ if __name__ == '__main__':
     utils.init_model(model)
 
     if opt.pretrain:
-        model.embedding.weight.data.copy_(SEQ.vocab.vectors)
+        # model.embedding.weight.data.copy_(SEQ.vocab.vectors)
+        utils.load_pretrain(embedding, SEQ.vocab.vectors)
 
     if opt.fload is not None:
         model_fname = opt.fload
