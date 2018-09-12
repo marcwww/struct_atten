@@ -181,6 +181,8 @@ class InterAttention(nn.Module):
         mask2_ex = mask2.float().transpose(0, 1).expand_as(r2_compare)
 
         # r_pooling: (bsz, sema_dim)
+        # r1_pooling = (r1_compare * mask1_ex).sum(1)
+        # r2_pooling = (r2_compare * mask2_ex).sum(1)
         r1_pooling = (r1_compare * mask1_ex).sum(1) / lens1.float()
         r2_pooling = (r2_compare * mask2_ex).sum(1) / lens2.float()
 

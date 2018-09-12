@@ -96,7 +96,7 @@ class StructLSTM(nn.Module):
         f = tp.matmul(self.w_a). \
             matmul(tc.transpose(1, 2))
         seq_len = f.shape[1]
-        f[:, range(seq_len), range(seq_len)] = -1e-10
+        f[:, range(seq_len), range(seq_len)] = -1e10
         f_r = self.w_root(vec_stru)
         f = f.exp()
         f_r = f_r.exp()
