@@ -1,5 +1,5 @@
 import numpy as np
-from torch.nn.init import xavier_uniform_
+from torch.nn.init import xavier_uniform_, normal_
 import torch
 from torch import nn
 from torch.nn import functional as F
@@ -124,10 +124,18 @@ def avg_vector(i, n):
     V[:i+1] = 1/(i+1)
     return V
 
-def init_model(model):
+def init_model_xavier(model):
     for p in model.parameters():
         if p.dim() > 1 and p.requires_grad:
             xavier_uniform_(p)
+
+def init_model_normal(model):
+    for p in model.parameters():
+        if p.dim() > 1 and p.requires_grad:
+            normal_(p, mean=0, std=0.01)
+
+def init_embedding_normal(emb):
+    normal_(emb.weight, mean=0, std=1)
 
 def progress_bar(percent, loss, epoch):
     """Prints the progress until the next report."""
@@ -255,6 +263,8 @@ def time_int():
     return int(time.time())
 
 def load_pretrain(embed, vectors):
+    # init_embedding_normal(embed)
+
     mask = vectors.ne(0).sum(-1).ne(0)
     idices = []
     for idx, mask_val in enumerate(mask):

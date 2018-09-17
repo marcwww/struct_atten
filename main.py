@@ -63,11 +63,15 @@ if __name__ == '__main__':
 
         model = nets.StructNLI(encoder, embedding, opt.dropout).to(device)
 
-    utils.init_model(model)
+    # utils.init_model_normal(model)
+    utils.init_model_xavier(model)
 
     if opt.pretrain:
         # model.embedding.weight.data.copy_(SEQ.vocab.vectors)
         utils.load_pretrain(embedding, SEQ.vocab.vectors)
+
+    if opt.fix_emb:
+        embedding.weight.requires_grad = False
 
     if opt.fload is not None:
         model_fname = opt.fload

@@ -30,7 +30,8 @@ if __name__ == '__main__':
                              ftest=opt.ftest,
                              bsz=opt.bsz,
                              device=opt.gpu,
-                             pretrain=opt.pretrain)
+                             pretrain=opt.pretrain,
+                             min_freq=opt.min_freq)
 
     location = opt.gpu if torch.cuda.is_available() and opt.gpu != -1 else 'cpu'
     device = torch.device(location)
@@ -62,10 +63,15 @@ if __name__ == '__main__':
 
         model = nets.StructNLI(encoder, embedding, opt.dropout).to(device)
 
-    utils.init_model(model)
+    # utils.init_model_normal(model)
+    utils.init_model_xavier(model)
 
     if opt.pretrain:
-        model.embedding.weight.data.copy_(SEQ.vocab.vectors)
+        # model.embedding.weight.data.copy_(SEQ.vocab.vectors)
+        utils.load_pretrain(embedding, SEQ.vocab.vectors)
+
+    if opt.fix_emb:
+        embedding.weight.requires_grad = False
 
     if opt.fload is not None:
         model_fname = opt.fload
@@ -80,14 +86,17 @@ if __name__ == '__main__':
     optimizer = None
     if opt.optim == 'adagrad':
         optimizer = optim.Adagrad(params=filter(lambda p: p.requires_grad, model.parameters()),
-                               lr=opt.lr)
+                                  lr=opt.lr,
+                                  weight_decay=opt.wdecay)
 
     if opt.optim == 'adam':
         optimizer = optim.Adam(params=filter(lambda p: p.requires_grad, model.parameters()),
-                                  lr=opt.lr)
+                               lr=opt.lr,
+                               weight_decay=opt.wdecay)
 
     param_str = utils.param_str(opt)
     for key, val in param_str.items():
         print(str(key) + ': ' + str(val))
 
     print('Test accuracy:', training.valid(model, iters['test_iter']))
+    # print('Test accuracy:', training.valid(model, iters['valid_iter']))

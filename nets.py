@@ -129,15 +129,21 @@ class StructLSTM(nn.Module):
         return output
 
 class InterAttention(nn.Module):
-    def __init__(self, sema_dim):
+    def __init__(self, sema_dim, dropout):
 
         super(InterAttention, self).__init__()
-        self.mlp = nn.Sequential(nn.Linear(sema_dim, sema_dim),
-                                 nn.ReLU(),
-                                 nn.Linear(sema_dim, sema_dim))
-        self.compare = nn.Sequential(nn.Linear(sema_dim * 2, sema_dim),
-                                     nn.ReLU(),
-                                     nn.Linear(sema_dim, sema_dim))
+        self.mlp = nn.Sequential(nn.Dropout(dropout),
+                                 nn.Linear(sema_dim, sema_dim),
+                                 nn.LeakyReLU(),
+                                 nn.Dropout(dropout),
+                                 nn.Linear(sema_dim, sema_dim),
+                                 nn.LeakyReLU())
+        self.compare = nn.Sequential(nn.Dropout(dropout),
+                                     nn.Linear(sema_dim * 2, sema_dim),
+                                     nn.LeakyReLU(),
+                                     nn.Dropout(dropout),
+                                     nn.Linear(sema_dim, sema_dim),
+                                     nn.LeakyReLU())
         self.inf = -1e10
 
     def forward(self, r1, r2, mask1, mask2):
@@ -197,18 +203,22 @@ class StructNLI(nn.Module):
         self.embedding = embedding
         self.padding_idx = encoder.padding_idx
         sema_dim = encoder.sema_dim
-        self.mlp = nn.Sequential(nn.Linear(sema_dim * 2, sema_dim),
-                                 nn.ReLU(),
-                                 nn.Linear(sema_dim, 3))
-        self.inter_atten = InterAttention(sema_dim)
-        self.dropout = nn.Dropout(dropout)
+        self.mlp = nn.Sequential(nn.Dropout(dropout),
+                                 nn.Linear(sema_dim * 2, sema_dim),
+                                 nn.LeakyReLU(),
+                                 nn.Dropout(dropout),
+                                 nn.Linear(sema_dim, 3),
+                                 nn.LeakyReLU())
+        self.inter_atten = InterAttention(sema_dim, dropout)
+        self.emb_affine = nn.Sequential(nn.Linear(embedding.embedding_dim, encoder.edim),
+                                        nn.Dropout(dropout))
 
     def forward(self, seq1, seq2):
         embs1 = self.embedding(seq1)
         embs2 = self.embedding(seq2)
 
-        embs1 = self.dropout(embs1)
-        embs2 = self.dropout(embs2)
+        embs1 = self.emb_affine(embs1)
+        embs2 = self.emb_affine(embs2)
 
         # mask: (seq_len, bsz, 1)
         mask1 = seq1.data.ne(self.padding_idx).unsqueeze(-1)
