@@ -36,6 +36,35 @@ def LU(A, eps = 1e-10):
 
     return L, U
 
+def inv2(A):
+    A_copy = A.clone().data
+    bsz, n = A.shape[0], A.shape[1]
+    A_inv = A.new_zeros(A.shape).data
+    A_inv[:, range(n), range(n)] = 1
+    # min_val = A.new_ones((1,)) * 1e-5
+    for i in range(n):
+        indices_max = torch.max(A_copy[:, i:, i], dim=1)[1] + i
+
+        # swap the max to the diagonal
+        A_copy[:, [i] * bsz], A_copy[:, indices_max] = A_copy[:, indices_max], A_copy[:, [i]*bsz]
+        A_inv[:, [i] * bsz], A_inv[:, indices_max] = A_inv[:, indices_max], A_inv[:, [i] * bsz]
+
+        # begin gaussian
+        indices = list(range(n))
+        indices.pop(i)
+        divisor = A_copy[:, i:i+1, i:i+1]
+        factor = A_copy[:, indices, i:i+1] / divisor
+
+        A_copy[:, indices, :] -= factor.matmul(A_copy[:, i:i + 1, :])
+        A_inv[:, indices, :] -= factor.matmul(A_inv[:, i:i+1, :])
+
+    divisor = A_copy[:, range(n), range(n)].unsqueeze(-1)
+    A_inv /= divisor
+    A_copy /= divisor
+
+    A_inv_grad = - A_inv.matmul(A).matmul(A_inv)
+    return A_inv + A_inv_grad - A_inv_grad.data
+
 def inv(A, eps = 1e-4):
 
     assert len(A.shape) == 3 and \
@@ -55,6 +84,7 @@ def inv(A, eps = 1e-4):
         L[:, i+1:, i:i+1] = U[:, i+1:, i:i+1] / U[:, i:i+1, i:i+1]
         L_inv[:, i+1:, :] -= L[:, i+1:, i:i+1].matmul(L_inv[:, i:i+1, :])
         U[:, i+1:, :] -= L[:, i+1:, i:i+1].matmul(U[:, i:i+1, :])
+        print(i, U[:, i+1:, :])
 
     # [U L^{-1}] -> [I U^{-1}L^{-1}] = [I (LU)^{-1}]
     A_inv = L_inv
@@ -290,12 +320,35 @@ if __name__ == '__main__':
     # print(inv(A)[0])
     # print(torch.inverse(A[0]))
 
-    for _ in range(100):
-        A = torch.randn(1, 3, 3)
-        print(inv(A).unsqueeze(0))
-        print(torch.inverse(A[0]))
-        cost = torch.norm(inv(A).unsqueeze(0) - torch.inverse(A[0])).sum()
-        print(cost)
+    # for _ in range(100):
+    #     A = torch.randn(1, 3, 3)
+    #     print(inv2(A).matmul(A).sum())
+        # print(torch.inverse(A[0]))
+        # cost = torch.norm(inv2(A).unsqueeze(0) - torch.inverse(A[0])).sum()
+        # print(cost)
+
+    # import pickle
+    # A = pickle.load(open('LL.pkl', 'rb'))
+    # A = torch.Tensor(A)
+    # print(np.linalg.matrix_rank(A[30]+torch.randn(22, 22)*1000))
+    # print(inv2(A[30].unsqueeze(0)))
+    # print(inv2(A[30, None]).matmul(A[30, None]))
+    # print(torch.inverse(A[30]).matmul(A[30]).sum())
+    # A = torch.\
+    #     tensor([[[ 1.,  2.,  9., 3],
+    #      [ 4.,  9.,  4., 5],
+    #      [ 1.,  1.,  1., 1],
+    #      [1., 2., 1., 1]]])
+    A = torch.\
+        tensor([[[ 0.,  2.,  9.],
+         [ 4.,  9.,  4.],
+         [ 3.,  9.,  6.]]])
+    print(np.linalg.matrix_rank(A[0]))
+    print(inv2(torch.cat([A,A])))
+    # print(inv2(A)[1])
+    # print(inv2(A)[0].matmul(A))
+    print(torch.inverse(A[0]))
+    # print(torch.inverse(A[0]).matmul(A[0]))
 
     # np.set_printoptions(precision=4)
     #

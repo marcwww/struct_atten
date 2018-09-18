@@ -1,6 +1,7 @@
 import iter
 import nets_no_mask
 import nets
+import nets_batch_first
 import training
 import argparse
 import opts
@@ -54,14 +55,21 @@ if __name__ == '__main__':
         model = nets_no_mask.StructNLI(encoder, embedding, opt.dropout).to(device)
 
     if opt.mask == 'mask':
-        encoder = nets.StructLSTM(opt.edim,
-                                          opt.hdim,
-                                          opt.sema_dim,
-                                          opt.stru_dim,
-                                          opt.dropout,
-                                          SEQ.vocab.stoi[PAD])
+        # encoder = nets.StructLSTM(opt.edim,
+        #                                   opt.hdim,
+        #                                   opt.sema_dim,
+        #                                   opt.stru_dim,
+        #                                   opt.dropout,
+        #                                   SEQ.vocab.stoi[PAD])
+        #
+        # model = nets.StructNLI(encoder, embedding, opt.dropout).to(device)
+        encoder = nets_batch_first.StructLSTM(opt.edim,
+                                              opt.hdim,
+                                              opt.dropout,
+                                              SEQ.vocab.stoi[PAD])
 
-        model = nets.StructNLI(encoder, embedding, opt.dropout).to(device)
+        model = nets_batch_first.StructNLI(encoder, embedding, opt.dropout).to(device)
+
 
     # utils.init_model_normal(model)
     utils.init_model_xavier(model)
