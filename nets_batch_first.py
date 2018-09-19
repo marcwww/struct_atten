@@ -28,7 +28,9 @@ class MatrixTree(nn.Module):
         LL = torch.cat([r.squeeze(-1).unsqueeze(1), LL], dim=1)
 
         # LL_inv = utils.inv(LL)
-        LL_inv = utils.inv2(LL)
+        # LL_inv = utils.inv2(LL)
+        LL_inv = utils.inv3(LL)
+
         # for i in range(LL_inv.shape[0]):
         #     print(LL_inv[i].sum())
 

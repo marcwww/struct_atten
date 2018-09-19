@@ -9,6 +9,7 @@ import time
 import numpy as np
 from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 import crash_on_ipy
+from block import block_diag
 
 LOGGER = logging.getLogger(__name__)
 
@@ -35,6 +36,24 @@ def LU(A, eps = 1e-10):
             U[:, j, k:] -= L[:, j, k].unsqueeze(-1) * U[:, k, k:]
 
     return L, U
+
+def inv3(A):
+    bsz, n = A.shape[0], A.shape[1]
+    A_inv = A.clone()
+    A_diag_inv = A.new_zeros((bsz*n, bsz*n))
+    for b in range(bsz):
+        start = n*b
+        end = n*b+n
+        A_diag_inv[start:end, start:end] = A_inv[b]
+
+    A_diag_inv = torch.inverse(A_diag_inv)
+
+    for b in range(bsz):
+        start = n*b
+        end = n*b+n
+        A_inv[b] = A_diag_inv[start:end, start:end]
+
+    return A_inv
 
 def inv2(A, eps=1e-4):
     bsz, n = A.shape[0], A.shape[1]
@@ -364,12 +383,12 @@ if __name__ == '__main__':
 
     import time
     begin = time.time()
-    inv2(A)
+    inv3(A)
     a = time.time()
     print(a - begin)
 
-    # inv(A)
-    torch.inverse(A[0])
+    inv2(A)
+    # torch.inverse(A[0])
     b = time.time()
     print(b - a)
 
