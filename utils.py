@@ -36,29 +36,35 @@ def LU(A, eps = 1e-10):
 
     return L, U
 
-def inv2(A):
-    A_copy = A.clone().data
+def inv2(A, eps=1e-4):
     bsz, n = A.shape[0], A.shape[1]
+    indices_bsz, indices_n, indices_diag = \
+        range(bsz), range(n), [[i for _ in range(bsz)] for i in range(n)]
+    A_copy = A.clone().data
     A_inv = A.new_zeros(A.shape).data
-    A_inv[:, range(n), range(n)] = 1
+    A_inv[:, indices_n, indices_n] = 1
     # min_val = A.new_ones((1,)) * 1e-5
+
     for i in range(n):
         indices_max = torch.max(A_copy[:, i:, i], dim=1)[1] + i
 
         # swap the max to the diagonal
-        A_copy[:, [i] * bsz], A_copy[:, indices_max] = A_copy[:, indices_max], A_copy[:, [i]*bsz]
-        A_inv[:, [i] * bsz], A_inv[:, indices_max] = A_inv[:, indices_max], A_inv[:, [i] * bsz]
+        A_copy[indices_bsz, indices_diag[i]], A_copy[indices_bsz, indices_max] = \
+            A_copy[indices_bsz, indices_max], A_copy[indices_bsz, indices_diag[i]]
+        A_inv[indices_bsz, indices_diag[i]], A_inv[indices_bsz, indices_max] =\
+            A_inv[indices_bsz, indices_max], A_inv[indices_bsz, indices_diag[i]]
 
         # begin gaussian
         indices = list(range(n))
         indices.pop(i)
-        divisor = A_copy[:, i:i+1, i:i+1]
+        divisor = A_copy[:, i:i+1, i:i+1].\
+            masked_fill_(A_copy[:, i:i+1, i:i+1].eq(0), eps)
         factor = A_copy[:, indices, i:i+1] / divisor
 
         A_copy[:, indices, :] -= factor.matmul(A_copy[:, i:i + 1, :])
         A_inv[:, indices, :] -= factor.matmul(A_inv[:, i:i+1, :])
 
-    divisor = A_copy[:, range(n), range(n)].unsqueeze(-1)
+    divisor = A_copy[:, indices_n, indices_n].unsqueeze(-1)
     A_inv /= divisor
     A_copy /= divisor
 
@@ -340,14 +346,33 @@ if __name__ == '__main__':
     #      [ 1.,  1.,  1., 1],
     #      [1., 2., 1., 1]]])
     A = torch.\
-        tensor([[[ 0.,  2.,  9.],
-         [ 4.,  9.,  4.],
+        tensor([[[ 1.,  2.,  9.],
+         [ 2.,  9.,  4.],
          [ 3.,  9.,  6.]]])
-    print(np.linalg.matrix_rank(A[0]))
-    print(inv2(torch.cat([A,A])))
+    B = torch. \
+        tensor([[[3., 2., 9.],
+                 [1., 2., 7.],
+                 [3., 5., 8.]]])
+
+    # A += 1e-4
+    print(np.linalg.matrix_rank(B))
+    print(inv2(torch.cat([A,B])))
     # print(inv2(A)[1])
-    # print(inv2(A)[0].matmul(A))
+    # print(inv2(A).matmul(B))
     print(torch.inverse(A[0]))
+    print(torch.inverse(B[0]))
+
+    import time
+    begin = time.time()
+    inv2(A)
+    a = time.time()
+    print(a - begin)
+
+    # inv(A)
+    torch.inverse(A[0])
+    b = time.time()
+    print(b - a)
+
     # print(torch.inverse(A[0]).matmul(A[0]))
 
     # np.set_printoptions(precision=4)
