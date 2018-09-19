@@ -14,7 +14,7 @@ class MatrixTree(nn.Module):
 
     :cite:`DBLP:journals/corr/LiuL17d`
     """
-    def __init__(self, eps=1e-5):
+    def __init__(self, eps=1):
         self.eps = eps
         super(MatrixTree, self).__init__()
 
@@ -22,17 +22,17 @@ class MatrixTree(nn.Module):
         # A: (bsz, seq_len, seq_len)
         # r: (bsz, seq_len, 1)
         bsz, seq_len = A.shape[0], A.shape[1]
+        indices_n = list(range(seq_len))
+
         L = -A
-        L[:, range(seq_len), range(seq_len)] = A.sum(dim=1)
+        L[:, indices_n, indices_n] = A.sum(dim=1)
         LL = L[:, 1:, :]
         LL = torch.cat([r.squeeze(-1).unsqueeze(1), LL], dim=1)
 
-        # LL_inv = utils.inv(LL)
-        # LL_inv = utils.inv2(LL)
-        LL_inv = utils.inv3(LL)
-
-        # for i in range(LL_inv.shape[0]):
-        #     print(LL_inv[i].sum())
+        LL_diag = LL[:, indices_n, indices_n]
+        LL[:, indices_n, indices_n] = LL_diag.\
+            masked_fill_(LL_diag.eq(0), self.eps)
+        LL_inv = utils.inv4(LL)
 
         d0 = (r.squeeze(-1) * LL_inv[:, :, 0]).unsqueeze(1)
         # LL_inv_diag: (bsz, seq_len, 1)
@@ -105,7 +105,7 @@ class StructLSTM(nn.Module):
 
         # a0: (bsz, 1, seq_len)
         # a: (bsz, seq_len, seq_len)
-        a0, a = self.struct_atten(f + self.eps, f_r + self.eps)
+        a0, a = self.struct_atten(f, f_r)
         a_c = a
 
         # a_p: (bsz, seq_len, seq_len + 1)

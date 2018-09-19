@@ -37,23 +37,64 @@ def LU(A, eps = 1e-10):
 
     return L, U
 
+def inv4(A, eps = 1e-4):
+
+    assert len(A.shape) == 3 and \
+           A.shape[1] == A.shape[2]
+    n = A.shape[1]
+    U = A.clone().data
+    # zero_mask = U.eq(0)
+    # U.masked_fill_(zero_mask, eps)
+    L = A.new_zeros(A.shape).data
+    L[:, range(n), range(n)] = 1
+    I = L.clone()
+
+    # A = LU
+    # [A I] = [LU I] -> [U L^{-1}]
+    L_inv = I
+    for i in range(n-1):
+        L[:, i+1:, i:i+1] = U[:, i+1:, i:i+1] / U[:, i:i+1, i:i+1]
+        L_inv[:, i+1:, :] -= L[:, i+1:, i:i+1].matmul(L_inv[:, i:i+1, :])
+        U[:, i+1:, :] -= L[:, i+1:, i:i+1].matmul(U[:, i:i+1, :])
+
+    # [U L^{-1}] -> [I U^{-1}L^{-1}] = [I (LU)^{-1}]
+    A_inv = L_inv
+    for i in range(n-1, -1, -1):
+        A_inv[:, i:i+1, :] = A_inv[:, i:i+1, :] / U[:, i:i+1, i:i+1]
+        U[:, i:i+1, :] = U[:, i:i+1, :] / U[:, i:i+1, i:i+1]
+
+        if i > 0:
+            A_inv[:, :i, :] -= U[:, :i, i:i+1].matmul(A_inv[:, i:i+1, :])
+            U[:, :i, :] -= U[:, :i, i:i+1].matmul(U[:, i:i+1, :])
+
+    A_inv_grad = - A_inv.matmul(A).matmul(A_inv)
+    return A_inv + A_inv_grad - A_inv_grad.data
+
 def inv3(A):
     bsz, n = A.shape[0], A.shape[1]
-    A_inv = A.clone()
-    A_diag_inv = A.new_zeros((bsz*n, bsz*n))
-    for b in range(bsz):
-        start = n*b
-        end = n*b+n
-        A_diag_inv[start:end, start:end] = A_inv[b]
+    indices_bsz, indices_n, indices_diag = \
+        list(range(bsz)), list(range(n)), [[i for _ in range(bsz)] for i in range(n)]
+    A_copy = A.clone().data
+    A_inv = A.new_zeros(A.shape).data
+    A_inv[:, indices_n, indices_n] = 1
 
-    A_diag_inv = torch.inverse(A_diag_inv)
+    for i in range(n):
+        # begin gaussian
+        indices = list(range(n))
+        indices.pop(i)
+        divisor = A_copy[:, i:i + 1, i:i + 1]
+        assert not (0 in A_copy[:, 0, 0])
+        factor = A_copy[:, indices, i:i + 1] / divisor
 
-    for b in range(bsz):
-        start = n*b
-        end = n*b+n
-        A_inv[b] = A_diag_inv[start:end, start:end]
+        A_copy[:, indices, :] -= factor.matmul(A_copy[:, i:i + 1, :])
+        A_inv[:, indices, :] -= factor.matmul(A_inv[:, i:i + 1, :])
 
-    return A_inv
+    divisor = A_copy[:, indices_n, indices_n].unsqueeze(-1)
+    A_inv /= divisor
+    A_copy /= divisor
+
+    A_inv_grad = - A_inv.matmul(A).matmul(A_inv)
+    return A_inv + A_inv_grad - A_inv_grad.data
 
 def inv2(A, eps=1e-4):
     bsz, n = A.shape[0], A.shape[1]
@@ -109,7 +150,6 @@ def inv(A, eps = 1e-4):
         L[:, i+1:, i:i+1] = U[:, i+1:, i:i+1] / U[:, i:i+1, i:i+1]
         L_inv[:, i+1:, :] -= L[:, i+1:, i:i+1].matmul(L_inv[:, i:i+1, :])
         U[:, i+1:, :] -= L[:, i+1:, i:i+1].matmul(U[:, i:i+1, :])
-        print(i, U[:, i+1:, :])
 
     # [U L^{-1}] -> [I U^{-1}L^{-1}] = [I (LU)^{-1}]
     A_inv = L_inv
@@ -355,51 +395,62 @@ if __name__ == '__main__':
     # import pickle
     # A = pickle.load(open('LL.pkl', 'rb'))
     # A = torch.Tensor(A)
-    # print(np.linalg.matrix_rank(A[30]+torch.randn(22, 22)*1000))
-    # print(inv2(A[30].unsqueeze(0)))
+    # A = A[30] + torch.diag(torch.Tensor([1e10]*22))
+    # print(np.linalg.matrix_rank(A))
+    # print(inv2(A[None]).matmul(A[None]).sum())
+    # print(inv2(A[30, None]).matmul(A[30, None]))
+    # print()
+    # print((inv2(A).matmul(A)).view(64,-1).sum(-1))
     # print(inv2(A[30, None]).matmul(A[30, None]))
     # print(torch.inverse(A[30]).matmul(A[30]).sum())
+    # A = torch.eye(3) * 1e-5
+    # print(inv2(A[None]))
     # A = torch.\
     #     tensor([[[ 1.,  2.,  9., 3],
     #      [ 4.,  9.,  4., 5],
     #      [ 1.,  1.,  1., 1],
     #      [1., 2., 1., 1]]])
-    A = torch.\
-        tensor([[[ 1.,  2.,  9.],
-         [ 2.,  9.,  4.],
-         [ 3.,  9.,  6.]]])
-    B = torch. \
-        tensor([[[3., 2., 9.],
-                 [1., 2., 7.],
-                 [3., 5., 8.]]])
-
+    # A = torch.\
+    #     tensor([[[ 1.,  2.,  9.],
+    #      [ 2.,  9.,  4.],
+    #      [ 3.,  9.,  6.]]])
+    # B = torch. \
+    #     tensor([[[3., 2., 9.],
+    #              [1., 2., 7.],
+    #              [3., 5., 8.]]])
+    #
     # A += 1e-4
-    print(np.linalg.matrix_rank(B))
-    print(inv2(torch.cat([A,B])))
+    # print(np.linalg.matrix_rank(B))
+    # print(inv2(torch.cat([A,B])))
     # print(inv2(A)[1])
     # print(inv2(A).matmul(B))
-    print(torch.inverse(A[0]))
-    print(torch.inverse(B[0]))
+    # print(torch.inverse(A[0]))
+    # print(torch.inverse(B[0]))
 
-    import time
-    begin = time.time()
-    inv3(A)
-    a = time.time()
-    print(a - begin)
-
-    inv2(A)
+    # import time
+    # begin = time.time()
+    # inv3(A)
+    # a = time.time()
+    # print(a - begin)
+    #
+    # inv2(A)
     # torch.inverse(A[0])
-    b = time.time()
-    print(b - a)
-
+    # b = time.time()
+    # print(b - a)
+    #
     # print(torch.inverse(A[0]).matmul(A[0]))
 
     # np.set_printoptions(precision=4)
     #
-    # A = torch.\
-    #     tensor([[[ 0.,  2.,  9.],
-    #      [ 4.,  9.,  4.],
-    #      [ 3.,  9.,  6.]]])
+    A = torch.\
+        tensor([[[ 1,  2.,  9.],
+         [ 4.,  9.,  4.],
+         [ 3.,  9.,  6.]]])
+    # A *= 1e-5
+    # A[0,0,0]=torch.min(A[0])
+    print(inv4(A))
+    # A[0,0,0]=0
+    print(torch.inverse(A[0]))
     #
     # A_inv, L, U = inv(A)
     # print(A_inv)

@@ -2,11 +2,8 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="a2fbcf34-e09a-40a3-b8d7-e118c82f28a5" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/structured_atten.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/structured_atten.iml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/nets_batch_first.py" beforeDir="false" afterPath="$PROJECT_DIR$/nets_batch_first.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/opts.py" beforeDir="false" afterPath="$PROJECT_DIR$/opts.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -16,16 +13,16 @@
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
   <component name="CoverageDataManager">
-    <SUITE FILE_PATH="coverage/structured_atten$utils.coverage" NAME="utils Coverage Results" MODIFIED="1537328015838" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/structured_atten$gpu_3.coverage" NAME="gpu_3 Coverage Results" MODIFIED="1536720244417" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/structured_atten$utils.coverage" NAME="utils Coverage Results" MODIFIED="1537359956137" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/structured_atten$gpu_3.coverage" NAME="gpu_3 Coverage Results" MODIFIED="1537360157730" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/structured_atten$gpu_4.coverage" NAME="gpu_4 Coverage Results" MODIFIED="1536844341107" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/structured_atten$gpu_7.coverage" NAME="gpu_7 Coverage Results" MODIFIED="1537327928699" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/structured_atten$gpu_7.coverage" NAME="gpu_7 Coverage Results" MODIFIED="1537356351825" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/structured_atten$cpu.coverage" NAME="cpu Coverage Results" MODIFIED="1537326140605" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/structured_atten$test.coverage" NAME="test Coverage Results" MODIFIED="1536850930360" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/structured_atten$main.coverage" NAME="gpu_7 Coverage Results" MODIFIED="1536077474060" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/structured_atten$nets.coverage" NAME="nets Coverage Results" MODIFIED="1536460248646" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/structured_atten$mask.coverage" NAME="mask Coverage Results" MODIFIED="1536480985478" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/structured_atten$gpu_5.coverage" NAME="gpu_5 Coverage Results" MODIFIED="1537325223330" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/structured_atten$gpu_5.coverage" NAME="gpu_5 Coverage Results" MODIFIED="1537360134938" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/structured_atten$no_mask.coverage" NAME="no_mask Coverage Results" MODIFIED="1536480388665" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/structured_atten$matrix_tree.coverage" NAME="matrix_tree Coverage Results" MODIFIED="1537321407786" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/structured_atten$gpu_6.coverage" NAME="gpu_6 Coverage Results" MODIFIED="1536549934283" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
@@ -66,13 +63,13 @@
         <counts>
           <entry key="Python Console" value="7506" />
           <entry key="dummy" value="3" />
-          <entry key="py" value="19283" />
+          <entry key="py" value="20201" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.types.edit">
         <counts>
           <entry key="PLAIN_TEXT" value="3" />
-          <entry key="Python" value="26789" />
+          <entry key="Python" value="27707" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.js.language.service.starts" />
@@ -81,11 +78,11 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file pinned="false" current-in-tab="false">
+      <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/nets_batch_first.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="150">
-              <caret line="16" column="33" lean-forward="true" selection-start-line="16" selection-start-column="33" selection-end-line="16" selection-end-column="33" />
+            <state relative-caret-position="329">
+              <caret line="30" lean-forward="true" selection-start-line="30" selection-end-line="30" />
             </state>
           </provider>
         </entry>
@@ -93,8 +90,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/opts.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="125">
-              <caret line="23" column="53" lean-forward="true" selection-start-line="23" selection-start-column="53" selection-end-line="23" selection-end-column="53" />
+            <state relative-caret-position="525">
+              <caret line="35" column="38" selection-start-line="35" selection-start-column="38" selection-end-line="35" selection-end-column="38" />
               <folding>
                 <element signature="e#0#15#0" expanded="true" />
               </folding>
@@ -102,11 +99,11 @@
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="true">
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/utils.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="906">
-              <caret line="115" column="32" lean-forward="true" selection-start-line="115" selection-start-column="32" selection-end-line="115" selection-end-column="32" />
+            <state relative-caret-position="51">
+              <caret line="39" column="4" selection-start-line="39" selection-start-column="4" selection-end-line="39" selection-end-column="4" />
               <folding>
                 <element signature="e#0#18#0" expanded="true" />
                 <element signature="e#371#714#0" />
@@ -124,7 +121,6 @@
                 <element signature="e#3724#3837#0" />
                 <element signature="e#3761#3837#0" />
                 <element signature="e#3875#3909#0" />
-                <element signature="e#3955#4348#0" />
                 <element signature="e#4078#4246#0" />
                 <element signature="e#4386#4503#0" />
                 <element signature="e#4537#5303#0" />
@@ -146,10 +142,10 @@
                 <element signature="e#7596#7619#0" />
                 <element signature="e#7660#7927#0" />
                 <element signature="e#7797#7845#0" />
-                <marker date="1537328014573" expanded="true" signature="1371:1552" ph="..." />
-                <marker date="1537328014573" expanded="true" signature="1574:2909" ph="..." />
-                <marker date="1537328014573" expanded="false" signature="4038:4043" ph="..." />
-                <marker date="1537328014573" expanded="false" signature="5703:5744" ph="..." />
+                <marker date="1537359954288" expanded="true" signature="3086:3088" ph="..." />
+                <marker date="1537359954288" expanded="true" signature="3110:4445" ph="..." />
+                <marker date="1537359954288" expanded="false" signature="5542:5547" ph="..." />
+                <marker date="1537359954288" expanded="false" signature="7207:7248" ph="..." />
               </folding>
             </state>
           </provider>
@@ -179,10 +175,10 @@
       <find>-</find>
       <find>/</find>
       <find>init_see</find>
-      <find>print</find>
       <find>nn.ReL</find>
       <find>ReLU</find>
       <find>word_dim</find>
+      <find>print</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -201,8 +197,8 @@
         <option value="$PROJECT_DIR$/test.py" />
         <option value="$PROJECT_DIR$/main.py" />
         <option value="$PROJECT_DIR$/opts.py" />
-        <option value="$PROJECT_DIR$/nets_batch_first.py" />
         <option value="$PROJECT_DIR$/utils.py" />
+        <option value="$PROJECT_DIR$/nets_batch_first.py" />
       </list>
     </option>
   </component>
@@ -237,11 +233,6 @@
               <item name="structured_atten" type="462c0819:PsiDirectoryNode" />
               <item name="data" type="462c0819:PsiDirectoryNode" />
             </path>
-            <path>
-              <item name="structured_atten" type="b2602c69:ProjectViewProjectNode" />
-              <item name="structured_atten" type="462c0819:PsiDirectoryNode" />
-              <item name="res" type="462c0819:PsiDirectoryNode" />
-            </path>
           </expand>
           <select />
         </subPane>
@@ -272,7 +263,7 @@
       </list>
     </option>
   </component>
-  <component name="RunManager" selected="Python.gpu_7">
+  <component name="RunManager" selected="Python.gpu_3">
     <configuration name="cpu" type="PythonConfigurationType" factoryName="Python">
       <module name="structured_atten" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -591,8 +582,8 @@
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
-      <window_info anchor="bottom" id="Find" order="1" />
-      <window_info active="true" anchor="bottom" id="Run" order="2" sideWeight="0.49840257" visible="true" weight="0.30420712" />
+      <window_info anchor="bottom" id="Find" order="1" weight="0.32901832" />
+      <window_info active="true" anchor="bottom" id="Run" order="2" sideWeight="0.49840257" visible="true" weight="0.3969795" />
       <window_info anchor="bottom" id="Debug" order="3" sideWeight="0.49840257" weight="0.42179072" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
@@ -625,58 +616,68 @@
         <watch expression="A[30]" language="Python" />
         <watch expression="A_copy[:, range(n), range(n)]" language="Python" />
         <watch expression="A_copy/A_copy[:, range(n), range(n)]" language="Python" />
+        <watch expression="tor" language="Python" />
+        <watch expression="torch.diag(torch.Tensor([1e10]*22))" language="Python" />
+        <watch expression="LL[0]" language="Python" />
+        <watch expression="LL[1]" language="Python" />
+        <watch expression="LL[2]" language="Python" />
+        <watch expression="LL[:, range(seq_len), range(seq_len)]" language="Python" />
+        <watch expression="LL_inv[0]" language="Python" />
+        <watch expression="LL_inv[3]" language="Python" />
+        <watch expression="LL[3]" language="Python" />
+        <watch expression="utils.inv3((LL[3]+torch.eye(seq_len).to(LL.device))[None])" language="Python" />
       </configuration>
     </watches-manager>
   </component>
   <component name="debuggerHistoryManager">
     <expressions id="watch">
       <expression>
-        <expression-string>A_copy/A_copy[:, range(n), range(n)]</expression-string>
+        <expression-string>utils.inv3((LL[3]+torch.eye(seq_len).to(LL.device))[None])</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>A_copy[:, range(n), range(n)]</expression-string>
+        <expression-string>utils.inv3((LL[3]+torch.eye(seq_len))[None])</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>A[30]</expression-string>
+        <expression-string>torch.inverse(LL[3])</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>embedding.weight</expression-string>
+        <expression-string>LL[3]</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>embedding.weight[2]</expression-string>
+        <expression-string>LL_inv[3]</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>embedding.weight[1]</expression-string>
+        <expression-string>LL_inv[0]</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>embedding.weight[0]</expression-string>
+        <expression-string>LL[:, range(seq_len), range(seq_len)]</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>mask</expression-string>
+        <expression-string>LL[2]</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>mask2_ex</expression-string>
+        <expression-string>LL[1]</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>mask1_ex</expression-string>
+        <expression-string>LL[0]</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
@@ -887,30 +888,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$USER_HOME$/.pyenv/versions/atec36/lib/python3.6/site-packages/block/block.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1233">
-          <caret line="89" lean-forward="true" selection-start-line="89" selection-end-line="89" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/opts.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="125">
-          <caret line="23" column="53" lean-forward="true" selection-start-line="23" selection-start-column="53" selection-end-line="23" selection-end-column="53" />
-          <folding>
-            <element signature="e#0#15#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/nets_batch_first.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="150">
-          <caret line="16" column="33" lean-forward="true" selection-start-line="16" selection-start-column="33" selection-end-line="16" selection-end-column="33" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/res/struct_atten-1536418818.json">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="165">
@@ -933,10 +910,17 @@
     <entry file="file://$PROJECT_DIR$/res/struct_atten-1536111233.json">
       <provider selected="true" editor-type-id="text-editor" />
     </entry>
+    <entry file="file://$USER_HOME$/.pyenv/versions/atec36/lib/python3.6/site-packages/block/block.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1233">
+          <caret line="89" lean-forward="true" selection-start-line="89" selection-end-line="89" />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/utils.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="906">
-          <caret line="115" column="32" lean-forward="true" selection-start-line="115" selection-start-column="32" selection-end-line="115" selection-end-column="32" />
+        <state relative-caret-position="51">
+          <caret line="39" column="4" selection-start-line="39" selection-start-column="4" selection-end-line="39" selection-end-column="4" />
           <folding>
             <element signature="e#0#18#0" expanded="true" />
             <element signature="e#371#714#0" />
@@ -954,7 +938,6 @@
             <element signature="e#3724#3837#0" />
             <element signature="e#3761#3837#0" />
             <element signature="e#3875#3909#0" />
-            <element signature="e#3955#4348#0" />
             <element signature="e#4078#4246#0" />
             <element signature="e#4386#4503#0" />
             <element signature="e#4537#5303#0" />
@@ -976,11 +959,28 @@
             <element signature="e#7596#7619#0" />
             <element signature="e#7660#7927#0" />
             <element signature="e#7797#7845#0" />
-            <marker date="1537328014573" expanded="true" signature="1371:1552" ph="..." />
-            <marker date="1537328014573" expanded="true" signature="1574:2909" ph="..." />
-            <marker date="1537328014573" expanded="false" signature="4038:4043" ph="..." />
-            <marker date="1537328014573" expanded="false" signature="5703:5744" ph="..." />
+            <marker date="1537359954288" expanded="true" signature="3086:3088" ph="..." />
+            <marker date="1537359954288" expanded="true" signature="3110:4445" ph="..." />
+            <marker date="1537359954288" expanded="false" signature="5542:5547" ph="..." />
+            <marker date="1537359954288" expanded="false" signature="7207:7248" ph="..." />
           </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/opts.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="525">
+          <caret line="35" column="38" selection-start-line="35" selection-start-column="38" selection-end-line="35" selection-end-column="38" />
+          <folding>
+            <element signature="e#0#15#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/nets_batch_first.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="329">
+          <caret line="30" lean-forward="true" selection-start-line="30" selection-end-line="30" />
         </state>
       </provider>
     </entry>
