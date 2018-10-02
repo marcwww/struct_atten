@@ -37,6 +37,41 @@ def LU(A, eps = 1e-10):
 
     return L, U
 
+
+def inv5(A, eps = 1e-4):
+    assert len(A.shape) == 3 and \
+           A.shape[1] == A.shape[2]
+    n = A.shape[1]
+    U = A.clone().data
+    # zero_mask = U.eq(0)
+    # U.masked_fill_(zero_mask, eps)
+    L = A.new_zeros(A.shape).data
+    L[:, range(n), range(n)] = 1
+    I = L.clone()
+
+    # A = LU
+    # [A I] = [LU I] -> [U L^{-1}]
+    L_inv = I
+    for i in range(n - 1):
+        L[:, i + 1:, i:i + 1] = U[:, i + 1:, i:i + 1] / U[:, i:i + 1, i:i + 1].masked_fill_(
+            U[:, i:i + 1, i:i + 1].eq(0), eps)
+        L_inv[:, i + 1:, :] -= L[:, i + 1:, i:i + 1].matmul(L_inv[:, i:i + 1, :])
+        U[:, i + 1:, :] -= L[:, i + 1:, i:i + 1].matmul(U[:, i:i + 1, :])
+
+    # [U L^{-1}] -> [I U^{-1}L^{-1}] = [I (LU)^{-1}]
+    A_inv = L_inv
+    for i in range(n - 1, -1, -1):
+        A_inv[:, i:i + 1, :] = A_inv[:, i:i + 1, :] / U[:, i:i + 1, i:i + 1].masked_fill_(U[:, i:i + 1, i:i + 1].eq(0),
+                                                                                          eps)
+        U[:, i:i + 1, :] = U[:, i:i + 1, :] / U[:, i:i + 1, i:i + 1]
+
+        if i > 0:
+            A_inv[:, :i, :] -= U[:, :i, i:i + 1].matmul(A_inv[:, i:i + 1, :])
+            U[:, :i, :] -= U[:, :i, i:i + 1].matmul(U[:, i:i + 1, :])
+
+    A_inv_grad = - A_inv.matmul(A).matmul(A_inv)
+    return A_inv + A_inv_grad - A_inv_grad.data
+
 def inv4(A, eps = 1e-4):
 
     assert len(A.shape) == 3 and \
@@ -120,7 +155,6 @@ def inv2(A, eps=1e-4):
         divisor = A_copy[:, i:i+1, i:i+1].\
             masked_fill_(A_copy[:, i:i+1, i:i+1].eq(0), eps)
         factor = A_copy[:, indices, i:i+1] / divisor
-
         A_copy[:, indices, :] -= factor.matmul(A_copy[:, i:i + 1, :])
         A_inv[:, indices, :] -= factor.matmul(A_inv[:, i:i+1, :])
 
@@ -130,6 +164,7 @@ def inv2(A, eps=1e-4):
 
     A_inv_grad = - A_inv.matmul(A).matmul(A_inv)
     return A_inv + A_inv_grad - A_inv_grad.data
+
 
 def inv(A, eps = 1e-4):
 
@@ -368,7 +403,121 @@ def load_pretrain(embed, vectors):
     embed.weight.data[idices] = \
         vectors[idices].to(embed.weight.device)
 
+"""Basic or helper implementation."""
+
+def convert_to_one_hot(indices, num_classes):
+    """
+    Args:
+        indices (tensor): A vector containing indices,
+            whose size is (batch_size,).
+        num_classes (tensor): The number of classes, which would be
+            the second dimension of the resulting one-hot matrix.
+
+    Returns:
+        result: The one-hot matrix of size (batch_size, num_classes).
+    """
+
+    batch_size = indices.size(0)
+    indices = indices.unsqueeze(1)
+    one_hot = indices.new_zeros(batch_size, num_classes).scatter_(1, indices, 1)
+    return one_hot
+
+
+def masked_softmax(logits, mask=None):
+    eps = 1e-20
+    probs = F.softmax(logits, dim=1)
+    if mask is not None:
+        mask = mask.float()
+        probs = probs * mask + eps
+        probs = probs / probs.sum(1, keepdim=True)
+    return probs
+
+
+def greedy_select(logits, mask=None):
+    probs = masked_softmax(logits=logits, mask=mask)
+    one_hot = convert_to_one_hot(indices=probs.max(1)[1],
+                                 num_classes=logits.size(1))
+    return one_hot
+
+
+def st_gumbel_softmax(logits, temperature=1.0, mask=None):
+    """
+    Return the result of Straight-Through Gumbel-Softmax Estimation.
+    It approximates the discrete sampling via Gumbel-Softmax trick
+    and applies the biased ST estimator.
+    In the forward propagation, it emits the discrete one-hot result,
+    and in the backward propagation it approximates the categorical
+    distribution via smooth Gumbel-Softmax distribution.
+
+    Args:
+        logits (tensor): A un-normalized probability values,
+            which has the size (batch_size, num_classes)
+        temperature (float): A temperature parameter. The higher
+            the value is, the smoother the distribution is.
+        mask (tensor, optional): If given, it masks the softmax
+            so that indices of '0' mask values are not selected.
+            The size is (batch_size, num_classes).
+
+    Returns:
+        y: The sampled output, which has the property explained above.
+    """
+
+    eps = 1e-20
+    u = logits.data.new(*logits.size()).uniform_()
+    gumbel_noise = -torch.log(-torch.log(u + eps) + eps)
+    y = logits + gumbel_noise
+    y = masked_softmax(logits=y / temperature, mask=mask)
+    y_argmax = y.max(1)[1]
+    y_hard = convert_to_one_hot(indices=y_argmax, num_classes=y.size(1)).float()
+    y = (y_hard - y).detach() + y
+    return y
+
+
+def sequence_mask(sequence_length, max_length=None):
+    if max_length is None:
+        max_length = sequence_length.data.max()
+    batch_size = sequence_length.shape[0]
+    seq_range = torch.arange(0, max_length).long()
+    seq_range_expand = seq_range.unsqueeze(0).expand(batch_size, max_length)
+    seq_range_expand = seq_range_expand.to(sequence_length)
+    # seq_length_expand = sequence_length.unsqueeze(1).expand_as(seq_range_expand)
+    seq_length_expand = sequence_length.expand_as(seq_range_expand)
+    return seq_range_expand < seq_length_expand
+
+
+def reverse_padded_sequence(inputs, lengths, batch_first=False):
+    """Reverses sequences according to their lengths.
+    Inputs should have size ``T x B x *`` if ``batch_first`` is False, or
+    ``B x T x *`` if True. T is the length of the longest sequence (or larger),
+    B is the batch size, and * is any number of dimensions (including 0).
+    Arguments:
+        inputs (tensor): padded batch of variable length sequences.
+        lengths (list[int]): list of sequence lengths
+        batch_first (bool, optional): if True, inputs should be B x T x *.
+    Returns:
+        A tensor with the same size as inputs, but with each sequence
+        reversed according to its length.
+    """
+
+    if not batch_first:
+        inputs = inputs.transpose(0, 1)
+    if inputs.size(0) != len(lengths):
+        raise ValueError('inputs incompatible with lengths.')
+    reversed_indices = [list(range(inputs.size(1)))
+                        for _ in range(inputs.size(0))]
+    for i, length in enumerate(lengths):
+        if length > 0:
+            reversed_indices[i][:length] = reversed_indices[i][length-1::-1]
+    reversed_indices = (torch.LongTensor(reversed_indices).unsqueeze(2)
+                        .expand_as(inputs))
+    reversed_indices = reversed_indices.to(inputs)
+    reversed_inputs = torch.gather(inputs, 1, reversed_indices.long())
+    if not batch_first:
+        reversed_inputs = reversed_inputs.transpose(0, 1)
+    return reversed_inputs
+
 if __name__ == '__main__':
+    pass
     # up, down = shift_matrix(3)
     # x = np.array([[0,1,2]]).transpose()
     # print(x)
@@ -392,9 +541,12 @@ if __name__ == '__main__':
         # cost = torch.norm(inv2(A).unsqueeze(0) - torch.inverse(A[0])).sum()
         # print(cost)
 
+    # print(inv2(A[None]))
+
     # import pickle
     # A = pickle.load(open('LL.pkl', 'rb'))
     # A = torch.Tensor(A)
+    # print(A.view(64,-1).sum(-1))
     # A = A[30] + torch.diag(torch.Tensor([1e10]*22))
     # print(np.linalg.matrix_rank(A))
     # print(inv2(A[None]).matmul(A[None]).sum())
@@ -442,15 +594,15 @@ if __name__ == '__main__':
 
     # np.set_printoptions(precision=4)
     #
-    A = torch.\
-        tensor([[[ 1,  2.,  9.],
-         [ 4.,  9.,  4.],
-         [ 3.,  9.,  6.]]])
+    # A = torch.\
+    #     tensor([[[ 1,  2.,  9.],
+    #      [ 4.,  9.,  4.],
+    #      [ 3.,  9.,  6.]]])
     # A *= 1e-5
     # A[0,0,0]=torch.min(A[0])
-    print(inv4(A))
+    # print(inv4(A))
     # A[0,0,0]=0
-    print(torch.inverse(A[0]))
+    # print(torch.inverse(A[0]))
     #
     # A_inv, L, U = inv(A)
     # print(A_inv)

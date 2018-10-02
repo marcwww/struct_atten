@@ -1,7 +1,6 @@
 import iter
-import nets_no_mask
-import nets
-import nets_batch_first
+from encs import struct_atten, binary_tree
+from tasks import nli
 import training
 import argparse
 import opts
@@ -12,7 +11,6 @@ from torch import nn
 from torch import optim
 from macros import *
 import crash_on_ipy
-
 
 if __name__ == '__main__':
     parser = argparse. \
@@ -43,33 +41,22 @@ if __name__ == '__main__':
                              embedding_dim=opt.edim,
                              padding_idx=SEQ.vocab.stoi[PAD])
 
-    model = None
-    if opt.mask == 'no_mask':
-        encoder = nets_no_mask.StructLSTM(opt.edim,
-                                  opt.hdim,
-                                  opt.sema_dim,
-                                  opt.stru_dim,
-                                  opt.dropout,
-                                  SEQ.vocab.stoi[PAD])
+    encoder = None
+    if opt.enc == 'struct_atten':
+        encoder =  struct_atten.StructLSTM(opt.edim,
+                                            opt.hdim,
+                                            opt.dropout,
+                                            SEQ.vocab.stoi[PAD])
+    if opt.enc == 'binary_tree':
+        encoder = binary_tree.BinaryTreeLSTM(opt.edim,
+                                             opt.hdim // 2,
+                                             True,
+                                             True,
+                                             1,
+                                             True,
+                                             SEQ.vocab.stoi[PAD])
 
-        model = nets_no_mask.StructNLI(encoder, embedding, opt.dropout).to(device)
-
-    if opt.mask == 'mask':
-        # encoder = nets.StructLSTM(opt.edim,
-        #                                   opt.hdim,
-        #                                   opt.sema_dim,
-        #                                   opt.stru_dim,
-        #                                   opt.dropout,
-        #                                   SEQ.vocab.stoi[PAD])
-        #
-        # model = nets.StructNLI(encoder, embedding, opt.dropout).to(device)
-        encoder = nets_batch_first.StructLSTM(opt.edim,
-                                              opt.hdim,
-                                              opt.dropout,
-                                              SEQ.vocab.stoi[PAD])
-
-        model = nets_batch_first.StructNLI(encoder, embedding, opt.dropout).to(device)
-
+    model = nli.NLI(encoder, embedding, opt.dropout).to(device)
 
     # utils.init_model_normal(model)
     utils.init_model_xavier(model)
