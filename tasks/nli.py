@@ -1,6 +1,7 @@
 import torch
 from torch import nn
 from torch.nn import functional as F
+import utils
 
 class InterAttention(nn.Module):
 
@@ -33,10 +34,6 @@ class InterAttention(nn.Module):
         r1 = r1 * mask1_ex
         r2 = r2 * mask2_ex
 
-        # lens: (bsz,)
-        lens1 = mask1.sum(dim=1)
-        lens2 = mask2.sum(dim=1)
-
         mask = torch.matmul(mask1_ex, mask2_ex.transpose(1, 2))
         mask_inf = mask.clone()
         mask_inf.masked_fill_(mask_inf.eq(0), self.inf)
@@ -62,17 +59,61 @@ class InterAttention(nn.Module):
         mask1_ex = mask1.float().expand_as(r1_compare)
         mask2_ex = mask2.float().expand_as(r2_compare)
 
-        # r_pooling: (bsz, sema_dim)
-        # r1_pooling = (r1_compare * mask1_ex).sum(1)
-        # r2_pooling = (r2_compare * mask2_ex).sum(1)
-        r1_pooling = (r1_compare * mask1_ex).sum(1) / lens1.float()
-        r2_pooling = (r2_compare * mask2_ex).sum(1) / lens2.float()
+        r1_compare = r1_compare * mask1_ex
+        r2_compare = r2_compare * mask2_ex
+        return r1_compare, r2_compare
 
-        return r1_pooling, r2_pooling
+class SelfAttention(nn.Module):
+
+    def forward(self, nodes, mask):
+        nodes_mean = nodes.mean(1).squeeze(1).unsqueeze(2)
+        # att_weights: (batch_size, num_tree_nodes)
+        att_weights = torch.bmm(nodes, nodes_mean).squeeze(2)
+        att_weights = utils.masked_softmax(
+            logits=att_weights, mask=mask)
+        # att_weights_expand: (batch_size, num_tree_nodes, hidden_dim)
+        att_weights_expand = att_weights.unsqueeze(2).expand_as(nodes)
+        # h: (batch_size, 1, 2 * hidden_dim)
+        h_pooling = (att_weights_expand * nodes).sum(1)
+
+        return h_pooling
+
+class FourWayClassifier(nn.Module):
+    def __init__(self, sema_dim, dropout, num_classes):
+        super(FourWayClassifier, self).__init__()
+        self.generator = nn.Sequential(nn.Dropout(dropout),
+                                       nn.Linear(4*sema_dim, sema_dim),
+                                       nn.LeakyReLU(),
+                                       nn.Dropout(dropout),
+                                       nn.Linear(sema_dim, num_classes))
+
+    def forward(self, u1, u2):
+        four_way = torch.\
+            cat([u1, u2, torch.abs(u1-u2), u1*u2], dim=1)
+        output = self.generator(four_way)
+        return output
+
+class CatClassifier(nn.Module):
+    def __init__(self, sema_dim, dropout, num_classes):
+        super(CatClassifier, self).__init__()
+        self.mlp = nn.Sequential(nn.Dropout(dropout),
+                                 nn.Linear(sema_dim * 2, sema_dim),
+                                 nn.LeakyReLU(),
+                                 nn.Dropout(dropout),
+                                 nn.Linear(sema_dim, num_classes),
+                                 nn.LeakyReLU())
+
+    def forward(self, u1, u2):
+        r = torch.cat([u1, u2], dim=-1)
+
+        # output: (bsz, 3)
+        output = self.mlp(r)
+        return output
 
 class NLI(nn.Module):
 
-    def __init__(self, encoder, embedding, dropout):
+    def __init__(self, encoder, embedding, dropout,
+                 use_inter_atten, pooling_method, classifier):
 
         super(NLI, self).__init__()
         self.encoder = encoder
@@ -88,6 +129,12 @@ class NLI(nn.Module):
         self.inter_atten = InterAttention(sema_dim, dropout)
         self.emb_affine = nn.Sequential(nn.Linear(embedding.embedding_dim, encoder.edim),
                                         nn.Dropout(dropout))
+        self.use_inter_atten = use_inter_atten
+        self.pooling_method = pooling_method
+        self.classifier = classifier
+        self.self_attn = SelfAttention()
+        self.cat_clf = CatClassifier(sema_dim, dropout, 3)
+        self.four_way_clf = FourWayClassifier(sema_dim, dropout, 3)
 
     def forward(self, seq1, seq2):
         seq1 = seq1.transpose(0, 1)
@@ -112,11 +159,31 @@ class NLI(nn.Module):
             mask1 = out1['mask'].unsqueeze(-1)
             mask2 = out2['mask'].unsqueeze(-1)
 
-        # mask for inter_atten...
-        # r_pooling: (bsz, sema_dim * 2)
-        r1_pooling, r2_pooling = self.inter_atten(r1, r2, mask1, mask2)
-        r = torch.cat([r1_pooling, r2_pooling], dim=-1)
+        if self.use_inter_atten:
+            r1, r2 = self.inter_atten(r1, r2, mask1, mask2)
 
-        # output: (bsz, 3)
-        output = self.mlp(r)
+        r1_pooling = None
+        r2_pooling = None
+        if self.pooling_method == 'mean':
+            # lens: (bsz,)
+            lens1 = mask1.sum(dim=1)
+            lens2 = mask2.sum(dim=1)
+            r1_pooling = r1.sum(1) / lens1.float()
+            r2_pooling = r2.sum(1) / lens2.float()
+
+        if self.pooling_method == 'max':
+            r1_pooling = torch.max(r1, 1)[0]
+            r2_pooling = torch.max(r2, 1)[0]
+
+        if self.pooling_method == 'self_attention':
+            r1_pooling = self.self_attn(r1, mask1.squeeze(-1))
+            r2_pooling = self.self_attn(r2, mask2.squeeze(-1))
+
+        output = None
+        if self.classifier == 'cat':
+            output = self.cat_clf(r1_pooling, r2_pooling)
+
+        if self.classifier == '4way':
+            output = self.four_way_clf(r1_pooling, r2_pooling)
+
         return output

@@ -9,13 +9,15 @@ def model_opts(parser):
     group.add_argument('-sema_dim', type=int, default=200)
     group.add_argument('-stru_dim', type=int, default=100)
     group.add_argument('-dropout', type=float, default=0.2)
-    # group.add_argument('-fix_emb', default=True, action='store_true')
-    group.add_argument('-fix_emb', default=False, action='store_true')
+    group.add_argument('-fix_emb', default=True, action='store_true')
+    # group.add_argument('-fix_emb', default=False, action='store_true')
     # group.add_argument('-dropout', type=float, default=0.3)
     # group.add_argument('-dropout', type=float, default=0)
     group.add_argument('-enc', type=str, default='binary_tree')
     # group.add_argument('-enc', type=str, default='struct_atten')
-
+    group.add_argument('-inter_atten', default=False, action='store_true')
+    group.add_argument('-pooling', type=str, default='self_attention') # mean, max, self_attention
+    group.add_argument('-clf', type=str, default='4way') # cat, 4way
 
 def train_opts(parser):
     group = parser.add_argument_group('train')
@@ -27,6 +29,7 @@ def train_opts(parser):
     # group.add_argument('-bsz', type=int, default=32)
     # group.add_argument('-lr', type=float, default=1e-5)
     group.add_argument('-lr', type=float, default=2e-4)
+    # group.add_argument('-lr', type=float, default=2e-5)
     # group.add_argument('-lr', type=float, default=4e-4)
     # group.add_argument('-IAV', type=float, default=0.1)
     # group.add_argument('-lr', type=float, default=1e-5)
@@ -38,6 +41,7 @@ def train_opts(parser):
     group.add_argument('-nepoch', type=int, default=100)
     group.add_argument('-save_per', type=int, default=1)
     group.add_argument('-fload', type=str, default=None)
+    # group.add_argument('-fload', type=str, default='struct_atten-1538545731.model')
     # group.add_argument('-fload', type=str, default='struct_atten-1538186850.model')
     # group.add_argument('-fload', type=str, default='struct_atten-1538216307.model')
     # group.add_argument('-fload', type=str, default='struct_atten-1537290454.model')

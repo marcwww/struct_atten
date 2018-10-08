@@ -56,7 +56,12 @@ if __name__ == '__main__':
                                              True,
                                              SEQ.vocab.stoi[PAD])
 
-    model = nli.NLI(encoder, embedding, opt.dropout).to(device)
+    model = nli.NLI(encoder,
+                    embedding,
+                    opt.dropout,
+                    use_inter_atten=opt.inter_atten,
+                    pooling_method=opt.pooling,
+                    classifier=opt.clf).to(device)
 
     # utils.init_model_normal(model)
     utils.init_model_xavier(model)
