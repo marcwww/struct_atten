@@ -236,6 +236,11 @@ class ChildSumTreeLSTMEncoder(nn.Module):
             for each level, l.
         """
         outputs = {}
+        bsz = len(forest.trees)
+        nodes_map = {i:[] for i in range(bsz)}
+        # -1 for ROOT
+        max_nnodes = max([len(tree.node_list)-1 for tree in forest.trees])
+        nodes = torch.zeros(bsz, max_nnodes, self.hdim).to(self.zero_vec)
 
         # Work backwards through level indices - i.e. bottom up.
         for l in reversed(range(forest.max_level + 1)):
@@ -261,5 +266,17 @@ class ChildSumTreeLSTMEncoder(nn.Module):
                     prev_outputs=outputs[l+1])
 
             outputs[l] = self.cell(inputs, hidden_states)
+            if l!= 0:
+                # record the tree nodes
+                for i, n in enumerate(forest.nodes[l]):
+                    b = n.tree_ix
+                    h_node = inputs[i] if n.is_leaf else outputs[l][1][i]
+                    nodes[b, len(nodes_map[b])] = h_node
+                    nodes_map[b].append(h_node)
 
-        return outputs[1][1]
+        mask = nodes.sum(-1).ne(0)
+        h = outputs[1][1]
+
+        return {'h': h,
+                'nodes': nodes,
+                'mask':mask}

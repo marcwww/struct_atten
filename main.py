@@ -52,7 +52,6 @@ if __name__ == '__main__':
         encoder = binary_tree.BinaryTreeLSTM(opt.edim,
                                              opt.hdim // 2,
                                              True,
-                                             True,
                                              1,
                                              True,
                                              SEQ.vocab.stoi[PAD])

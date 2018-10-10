@@ -154,38 +154,36 @@ class NLI(nn.Module):
             # r: (bsz, seq_len, sema_dim)
             out1 = self.encoder(embs1, mask1.float())
             out2 = self.encoder(embs2, mask2.float())
-            # else:
-            #     out1 = self.encoder(forest1)
-            #     out2 = self.encoder(forest2)
-
-            r1 = out1['nodes']
-            r2 = out2['nodes']
-            if 'mask' in out1 and 'mask' in out2:
-                mask1 = out1['mask'].unsqueeze(-1)
-                mask2 = out2['mask'].unsqueeze(-1)
-
-            if self.use_inter_atten:
-                r1, r2 = self.inter_atten(r1, r2, mask1, mask2)
-
-            r1_pooling = None
-            r2_pooling = None
-            if self.pooling_method == 'mean':
-                # lens: (bsz,)
-                lens1 = mask1.sum(dim=1)
-                lens2 = mask2.sum(dim=1)
-                r1_pooling = r1.sum(1) / lens1.float()
-                r2_pooling = r2.sum(1) / lens2.float()
-
-            if self.pooling_method == 'max':
-                r1_pooling = torch.max(r1, 1)[0]
-                r2_pooling = torch.max(r2, 1)[0]
-
-            if self.pooling_method == 'self_attention':
-                r1_pooling = self.self_attn(r1, mask1.squeeze(-1))
-                r2_pooling = self.self_attn(r2, mask2.squeeze(-1))
         else:
-            r1_pooling = self.encoder(inp1)
-            r2_pooling = self.encoder(inp2)
+            out1 = self.encoder(inp1)
+            out2 = self.encoder(inp2)
+
+        r1 = out1['nodes']
+        r2 = out2['nodes']
+        if 'mask' in out1 and 'mask' in out2:
+            mask1 = out1['mask'].unsqueeze(-1)
+            mask2 = out2['mask'].unsqueeze(-1)
+
+        if self.use_inter_atten:
+            r1, r2 = self.inter_atten(r1, r2, mask1, mask2)
+
+        r1_pooling = None
+        r2_pooling = None
+        if self.pooling_method == 'mean':
+            # lens: (bsz,)
+            lens1 = mask1.sum(dim=1)
+            lens2 = mask2.sum(dim=1)
+            r1_pooling = r1.sum(1) / lens1.float()
+            r2_pooling = r2.sum(1) / lens2.float()
+
+        if self.pooling_method == 'max':
+            r1_pooling = torch.max(r1, 1)[0]
+            r2_pooling = torch.max(r2, 1)[0]
+
+        if self.pooling_method == 'self_attention':
+            r1_pooling = self.self_attn(r1, mask1.squeeze(-1))
+            r2_pooling = self.self_attn(r2, mask2.squeeze(-1))
+
 
         output = None
         if self.classifier == 'cat':

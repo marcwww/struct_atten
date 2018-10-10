@@ -180,10 +180,12 @@ class Forest:
 
     def gather_nodes(self, trees):
         nodes = {}
-        for tree in trees:
+        for tree_ix, tree in enumerate(trees):
             for l, ns in tree.nodes.items():
                 if l not in nodes:
                     nodes[l] = []
+                for i in range(len(ns)):
+                    ns[i].tree_ix = tree_ix
                 nodes[l].extend(ns)
         return nodes
 
@@ -220,6 +222,7 @@ class Node:
         self.is_leaf = is_leaf
         self.has_token = token is not None
         self.vocab_ix = vocab_ix  # For vocab_dict index
+        self.tree_ix = None
 
     def __repr__(self):
         return '\n'.join(['%s: %s' % (key, value)

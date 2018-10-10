@@ -44,7 +44,7 @@ class BinaryTreeLSTMLayer(nn.Module):
 
 class BinaryTreeLSTM(nn.Module):
 
-    def __init__(self, word_dim, hidden_dim, use_leaf_rnn, intra_attention,
+    def __init__(self, word_dim, hidden_dim, use_leaf_rnn,
                  gumbel_temperature, bidirectional, padding_idx):
         super(BinaryTreeLSTM, self).__init__()
         self.word_dim = word_dim
@@ -52,7 +52,6 @@ class BinaryTreeLSTM(nn.Module):
         self.hidden_dim = hidden_dim
         self.sema_dim = hidden_dim
         self.use_leaf_rnn = use_leaf_rnn
-        self.intra_attention = intra_attention
         self.gumbel_temperature = gumbel_temperature
         self.bidirectional = bidirectional
         self.padding_idx = padding_idx
@@ -188,8 +187,7 @@ class BinaryTreeLSTM(nn.Module):
             state = self.word_linear(input)
             state = state.chunk(chunks=2, dim=2)
         nodes = []
-        if self.intra_attention:
-            nodes.append(state[0])
+        nodes.append(state[0])
         for i in range(max_depth - 1):
             h, c = state
             l = (h[:, :-1, :], c[:, :-1, :])
@@ -203,14 +201,12 @@ class BinaryTreeLSTM(nn.Module):
                     mask=length_mask[:, i+1:])
                 new_state = (new_h, new_c)
                 select_masks.append(select_mask)
-                if self.intra_attention:
-                    nodes.append(selected_h.unsqueeze(1))
-
+                nodes.append(selected_h.unsqueeze(1))
 
             done_mask = length_mask[:, i+1]
             state = self.update_state(old_state=state, new_state=new_state,
                                       done_mask=done_mask)
-            if self.intra_attention and i >= max_depth - 2:
+            if i >= max_depth - 2:
                 nodes.append(state[0])
 
         h, c = state
