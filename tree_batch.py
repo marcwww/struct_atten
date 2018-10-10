@@ -2,6 +2,7 @@
 import numpy as np
 from nltk.tokenize import sexpr
 import torch
+from macros import *
 
 
 def cumsum(seq):
@@ -31,7 +32,6 @@ def flatten_list_of_lists(list_of_lists):
       List.
     """
     return [item for sub_list in list_of_lists for item in sub_list]
-
 
 def get_adj_mat(nodes):
     """Get an adjacency matrix from a node set.
@@ -90,36 +90,6 @@ def get_child_ixs(nodes, adj_mat, device):
         child_ixs[l] = ixs
     return child_ixs
 
-
-def get_max_level(nodes):
-    """Get the highest level number given a list of nodes.
-
-    Args:
-      nodes: List of Nodes.
-
-    Returns:
-      Integer, the highest level number. It is a zero-based number, so if later
-        the actual number of levels is desired, will need to add one to this.
-    """
-    return max([n.level for n in nodes])
-
-
-def get_nodes_at_levels(nodes):
-    """Get a dictionary listing nodes at each level.
-
-    Args:
-      nodes: List of Nodes.
-
-    Returns:
-      Dictionary of {Integer: [List of Nodes]} for each level.
-    """
-    max_level = get_max_level(nodes)
-    return dict(zip(
-        range(max_level+1),
-        [[n for n in nodes if n.level == l]
-         for l in range(max_level+1)]))
-
-
 def get_parent_ixs(nodes, adj_mat):
     """Get lists of parent indices at each level.
 
@@ -170,8 +140,6 @@ def offset_node_lists(node_lists):
 
 
 # Model Classes
-
-
 class Forest:
     """Forest data structure.
 
@@ -204,13 +172,20 @@ class Forest:
         self.trees = trees
         node_lists = offset_node_lists([tree.node_list for tree in trees])
         self.node_list = flatten_list_of_lists(node_lists)
-        self.nodes = get_nodes_at_levels(self.node_list)
+        self.nodes = self.gather_nodes(trees)
         self.size = len(self.node_list)
-        self.max_level = get_max_level(self.node_list)
+        self.max_level = max(self.nodes.keys())
         self.adj_mat = get_adj_mat(self.node_list)
         self.child_ixs = get_child_ixs(self.nodes, self.adj_mat, device)
-        #self.parent_ixs = get_parent_ixs(self.nodes, self.adj_mat)
 
+    def gather_nodes(self, trees):
+        nodes = {}
+        for tree in trees:
+            for l, ns in tree.nodes.items():
+                if l not in nodes:
+                    nodes[l] = []
+                nodes[l].extend(ns)
+        return nodes
 
 class Node:
     """Node data structure.
@@ -268,21 +243,18 @@ class Tree:
         wirings.
     """
 
-    def __init__(self, nodes):
+    def __init__(self, node_list, nodes):
         """Create a new Tree.
 
         Args:
           nodes: List of Nodes.
         """
-        self.node_list = nodes
-        self.nodes = get_nodes_at_levels(self.node_list)
+        self.node_list = node_list
+        self.nodes = nodes
         self.size = len(self.node_list)
-        self.max_level = get_max_level(self.node_list)
+        self.max_level = max(nodes.keys())
         self.adj_mat = get_adj_mat(self.node_list)
         self.child_ixs = None
-        # self.child_ixs = get_child_ixs(self.nodes, self.adj_mat)
-        #self.parent_ixs = get_parent_ixs(self.nodes, self.adj_mat)
-
 
 # Parsing Classes and Functions
 
@@ -387,7 +359,8 @@ def sexpr_to_tree(sexpr, stoi, device):
     Returns:
       Tree.
     """
-    nodes = []
+    node_list = []
+    nodes = {}
     id = -1
     text_ix = -1
 
@@ -404,40 +377,23 @@ def sexpr_to_tree(sexpr, stoi, device):
         else:
             text_ix += 1
 
-        nodes.append(Node(
+        token = data[0] if is_leaf else PAD
+        node = Node(
             tag=tag,
             pos=None,  # don't have it in these sexpr Strings
-            token=data[0] if is_leaf else None,
+            token=token,
             id=id,
             parent_id=parent_id,
             relationship=None,  # don't have it
             text_ix=text_ix if is_leaf else None,
             level=level,
             is_leaf=is_leaf,
-            vocab_ix=torch.LongTensor([stoi[data[0]]]).to(device) if is_leaf else None))
+            vocab_ix=torch.LongTensor([stoi[token]]).to(device))
 
-    return Tree(nodes)
+        node_list.append(node)
+        if level not in nodes.keys():
+            nodes[level] = []
+        nodes[level].append(node)
 
+    return Tree(node_list, nodes)
 
-# Combining text into internal nodes
-
-
-def combine_text_at_nodes(tree):
-    for l in reversed(range(tree.max_level + 1)):
-        nodes = tree.nodes[l]
-        for ix in range(len(nodes)):
-            node = nodes[ix]
-            # for lowest level, set text_at_node to the token
-            if l == tree.max_level:
-                node.text_at_node = node.token
-            # for higher levels, compose these strings
-            if l < tree.max_level:
-                node.text_at_node = node.token if node.token else ''
-                children = [tree.nodes[l+1][cix]
-                            for cix in tree.child_ixs[l][ix]]
-                sorted_nodes = sorted([node] + [c for c in children],
-                                      key=lambda x: x.id)
-                nodes_text = [n.text_at_node
-                              for n in sorted_nodes
-                              if n.text_at_node != '']
-                node.text_at_node = ' '.join([tok for tok in nodes_text])

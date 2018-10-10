@@ -47,15 +47,6 @@ def load_examples(fname):
 
     return examples
 
-def proc_exprs(examples, stoi):
-    for i in range(len(examples)):
-        sexp1 = examples[i].tree1
-        sexp2 = examples[i].tree2
-        examples[i].tree1 = sexpr_to_tree(sexp1, stoi)
-        examples[i].tree2 = sexpr_to_tree(sexp2, stoi)
-
-    return examples
-
 class ForestIterator(object):
 
     def __init__(self, stoi, examples, bsz, device, shuffle=True):
@@ -145,10 +136,6 @@ def build_iters(ftrain, fvalid, ftest, bsz, device, pretrain, min_freq):
                                          sort_key=lambda x: len(x.seq1),
                                          sort_within_batch=True,
                                          device=device)
-
-    # examples_train = proc_exprs(examples_train, SEQ.vocab.stoi)
-    # examples_valid = proc_exprs(examples_valid, SEQ.vocab.stoi)
-    # examples_test = proc_exprs(examples_test, SEQ.vocab.stoi)
 
     train_fiter = ForestIterator(SEQ.vocab.stoi, examples_train, bsz, device)
     valid_fiter = ForestIterator(SEQ.vocab.stoi, examples_valid, bsz, device)

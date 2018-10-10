@@ -73,7 +73,7 @@ class BatchChildSumTreeLSTMCell(nn.Module):
         # prepare the inputs
         cell_states = previous_states[0]
         hidden_states = previous_states[1]
-        inputs_mat = torch.cat(inputs)
+        inputs_mat = inputs
         h_tilde_mat = torch.cat([torch.sum(h, 0).expand(1, self.hidden_size)
                                  for h in hidden_states],
                                 dim=0)
@@ -109,19 +109,20 @@ class BatchChildSumTreeLSTMCell(nn.Module):
         f_hiddens = prev_h_mat.mm(self.U_f)
         # compute the f_jks by expanding the inputs to the same number
         # of rows as there are prev_hs for each, then just do a simple add.
-        f_inputs_split = f_inputs.split(1, 0)
-        f_inputs_expanded = [f_inputs_split[i].expand(lens[i], self.hidden_size)
-                             for i in range(len(lens))]
-        f_inputs_ready = torch.cat(f_inputs_expanded, 0)
+        indices = [i for i in range(len(lens)) for _ in range(lens[i])]
+        f_inputs_ready = f_inputs[indices]
+
         f_jks = F.sigmoid(
             f_inputs_ready + f_hiddens + self.b_f.expand(
                 f_hiddens.size()[0], self.hidden_size))
 
         # cell and hidden state
         fc_mul = f_jks * prev_c_mat
-        split_fcs = [fc_mul[start[i]:end[i]] for i in range(len(lens))]
-        fc_term = torch.cat([torch.sum(item, 0).expand(1, self.hidden_size)
-                             for item in split_fcs])
+        sum_idx_mtrx = torch.zeros((len(lens), fc_mul.shape[0])).to(fc_mul)
+        for i, (b, e) in enumerate(zip(start, end)):
+            sum_idx_mtrx[i, b:e] = 1
+        fc_term = sum_idx_mtrx.matmul(fc_mul)
+
         c = F.sigmoid(z_i) * F.tanh(z_u) + fc_term
         h = F.sigmoid(z_o) * F.tanh(c)
 
@@ -138,7 +139,8 @@ class PreviousStates(nn.Module):
           hidden_size: Integer, number of units in a hidden state vector.
         """
         self.hidden_size = hidden_size
-        self.zero_vec = nn.Parameter(torch.zeros(1, hidden_size))
+        self.zero_vec = nn.Parameter(torch.zeros(1, hidden_size),
+                                     requires_grad=False)
 
     def __call__(self, level_nodes, level_up_wirings, prev_outputs):
         """Get previous hidden states.
@@ -169,17 +171,10 @@ class PreviousStates(nn.Module):
         # mind the order of returning
         return cell_states, hidden_states
 
-    @staticmethod
-    def get_children(prev_out, child_ixs_level_i):
-        # doesn't work for empty sets of children - in which case don't call
-        # selector = Variable(torch.LongTensor(child_ixs_level_i))
-        selector = child_ixs_level_i
-        return prev_out.index_select(0, selector)
-
     def states(self, level_nodes, level_length, prev_out, child_ixs_level):
         return [(self.zero_vec
                  if (level_nodes[i].is_leaf or len(child_ixs_level[i]) == 0)
-                 else self.get_children(prev_out, child_ixs_level[i]))
+                 else prev_out.index_select(0, child_ixs_level[i]))
                 for i in range(level_length)]
 
 class ChildSumTreeLSTMEncoder(nn.Module):
@@ -246,9 +241,10 @@ class ChildSumTreeLSTMEncoder(nn.Module):
         for l in reversed(range(forest.max_level + 1)):
 
             # Get input word vectors for this level.
-            inputs = [(self._word_vec(n.vocab_ix) if n.token
-                       else self.zero_vec)
-                      for n in forest.nodes[l]]
+            word_indices = torch.cat([n.vocab_ix for n in forest.nodes[l]])
+            mask = word_indices.ne(self.padding_idx).float()
+            inputs = self._embeddings(word_indices) * mask.unsqueeze(-1)
+            inputs = self._drop_input(inputs)
 
             # Get previous hidden states for this level.
             if l == forest.max_level:
@@ -267,13 +263,3 @@ class ChildSumTreeLSTMEncoder(nn.Module):
             outputs[l] = self.cell(inputs, hidden_states)
 
         return outputs[1][1]
-
-    def _word_vec(self, vocab_ix):
-        # lookup_tensor = Variable(
-        #     torch.LongTensor([vocab_ix]),
-        #     requires_grad=False)
-        # word_vec = self._embeddings(lookup_tensor)\
-        #     .type(torch.FloatTensor)
-        word_vec = self._embeddings(vocab_ix)
-        word_vec = self._drop_input(word_vec)
-        return word_vec
