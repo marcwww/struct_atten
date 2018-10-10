@@ -1,21 +1,26 @@
 import utils
 import os
 from macros import *
-from torch.nn.utils import clip_grad_norm
+from torch.nn.utils import clip_grad_norm_
 from sklearn.metrics import accuracy_score, \
     precision_score, recall_score, f1_score
 import torch
 import numpy as np
 
 def valid(model, valid_iter):
+    is_cslstm = (model.encoder.__class__.__name__ == 'ChildSumTreeLSTMEncoder')
     pred_lst = []
     true_lst = []
 
     with torch.no_grad():
         model.eval()
         for i, batch in enumerate(valid_iter):
-            seq1, seq2, lbl = batch.seq1, batch.seq2, batch.lbl
-            output= model(seq1, seq2)
+            if not is_cslstm:
+                inp1, inp2, lbl = batch.seq1, batch.seq2, batch.lbl
+            else:
+                inp1, inp2, lbl = batch
+
+            output= model(inp1, inp2)
             pred = output.max(dim=1)[1].cpu().numpy()
             lbl = lbl.cpu().numpy()
             pred_lst.extend(pred)
@@ -26,8 +31,10 @@ def valid(model, valid_iter):
     return accuracy
 
 def train(model, iters, opt, criterion, optim):
-    train_iter = iters['train_iter']
-    valid_iter = iters['valid_iter']
+    is_cslstm = (model.encoder.__class__.__name__ == 'ChildSumTreeLSTMEncoder')
+
+    train_iter = iters['train_iter'] if not is_cslstm else iters['train_fiter']
+    valid_iter = iters['valid_iter'] if not is_cslstm else iters['valid_fiter']
 
     basename = "{}-{}".format('struct_atten', utils.time_int())
     log_fname = basename + ".json"
@@ -39,16 +46,19 @@ def train(model, iters, opt, criterion, optim):
     best_performance = 0
     for epoch in range(opt.nepoch):
         for i, batch in enumerate(train_iter):
-            seq1, seq2, lbl = batch.seq1, batch.seq2, batch.lbl
+            if not is_cslstm:
+                inp1, inp2, lbl = batch.seq1, batch.seq2, batch.lbl
+            else:
+                inp1, inp2, lbl = batch
 
             model.train()
             model.zero_grad()
-            output = model(seq1, seq2)
+            output = model(inp1, inp2)
 
             loss = criterion(output.view(-1, len(LBL)), lbl)
             losses.append(loss.item())
             loss.backward()
-            clip_grad_norm(model.parameters(), 5)
+            clip_grad_norm_(model.parameters(), 5)
             optim.step()
 
             loss = {'clf_loss': loss.item()}

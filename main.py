@@ -1,9 +1,9 @@
 import iter
-from encs import struct_atten, binary_tree
+from encs import struct_atten, binary_tree, cslstm
 from tasks import nli
 import training
 import argparse
-import opts
+from params import opts
 import utils
 import os
 import torch
@@ -17,9 +17,10 @@ if __name__ == '__main__':
         ArgumentParser(description='main.py',
                        formatter_class=argparse.
                        ArgumentDefaultsHelpFormatter)
+    opts.general_opts(parser)
+    opt = parser.parse_args()
 
-    opts.model_opts(parser)
-    opts.train_opts(parser)
+    parser = opts.select_opt(opt, parser)
     opt = parser.parse_args()
 
     utils.init_seed(opt.seed)
@@ -55,6 +56,13 @@ if __name__ == '__main__':
                                              1,
                                              True,
                                              SEQ.vocab.stoi[PAD])
+    if opt.enc == 'cslstm':
+        encoder = cslstm.ChildSumTreeLSTMEncoder(opt.edim,
+                                                 opt.hdim,
+                                                 embedding,
+                                                 1 - opt.dropout,
+                                                 1 - opt.dropout,
+                                                 SEQ.vocab.stoi[PAD])
 
     model = nli.NLI(encoder,
                     embedding,

@@ -136,48 +136,56 @@ class NLI(nn.Module):
         self.cat_clf = CatClassifier(sema_dim, dropout, 3)
         self.four_way_clf = FourWayClassifier(sema_dim, dropout, 3)
 
-    def forward(self, seq1, seq2):
-        seq1 = seq1.transpose(0, 1)
-        seq2 = seq2.transpose(0, 1)
+    def forward(self, inp1, inp2):
+        if self.encoder.__class__.__name__ not in ['ChildSumTreeLSTMEncoder']:
+            seq1 = inp1.transpose(0, 1)
+            seq2 = inp2.transpose(0, 1)
 
-        embs1 = self.embedding(seq1)
-        embs2 = self.embedding(seq2)
+            embs1 = self.embedding(seq1)
+            embs2 = self.embedding(seq2)
 
-        embs1 = self.emb_affine(embs1)
-        embs2 = self.emb_affine(embs2)
+            embs1 = self.emb_affine(embs1)
+            embs2 = self.emb_affine(embs2)
 
-        # mask: (bsz, seq_len, 1)
-        mask1 = seq1.data.ne(self.padding_idx).unsqueeze(-1)
-        mask2 = seq2.data.ne(self.padding_idx).unsqueeze(-1)
+            # mask: (bsz, seq_len, 1)
+            mask1 = seq1.data.ne(self.padding_idx).unsqueeze(-1)
+            mask2 = seq2.data.ne(self.padding_idx).unsqueeze(-1)
 
-        # r: (bsz, seq_len, sema_dim)
-        out1 = self.encoder(embs1, mask1.float())
-        out2 = self.encoder(embs2, mask2.float())
-        r1 = out1['nodes']
-        r2 = out2['nodes']
-        if 'mask' in out1 and 'mask' in out2:
-            mask1 = out1['mask'].unsqueeze(-1)
-            mask2 = out2['mask'].unsqueeze(-1)
+            # r: (bsz, seq_len, sema_dim)
+            out1 = self.encoder(embs1, mask1.float())
+            out2 = self.encoder(embs2, mask2.float())
+            # else:
+            #     out1 = self.encoder(forest1)
+            #     out2 = self.encoder(forest2)
 
-        if self.use_inter_atten:
-            r1, r2 = self.inter_atten(r1, r2, mask1, mask2)
+            r1 = out1['nodes']
+            r2 = out2['nodes']
+            if 'mask' in out1 and 'mask' in out2:
+                mask1 = out1['mask'].unsqueeze(-1)
+                mask2 = out2['mask'].unsqueeze(-1)
 
-        r1_pooling = None
-        r2_pooling = None
-        if self.pooling_method == 'mean':
-            # lens: (bsz,)
-            lens1 = mask1.sum(dim=1)
-            lens2 = mask2.sum(dim=1)
-            r1_pooling = r1.sum(1) / lens1.float()
-            r2_pooling = r2.sum(1) / lens2.float()
+            if self.use_inter_atten:
+                r1, r2 = self.inter_atten(r1, r2, mask1, mask2)
 
-        if self.pooling_method == 'max':
-            r1_pooling = torch.max(r1, 1)[0]
-            r2_pooling = torch.max(r2, 1)[0]
+            r1_pooling = None
+            r2_pooling = None
+            if self.pooling_method == 'mean':
+                # lens: (bsz,)
+                lens1 = mask1.sum(dim=1)
+                lens2 = mask2.sum(dim=1)
+                r1_pooling = r1.sum(1) / lens1.float()
+                r2_pooling = r2.sum(1) / lens2.float()
 
-        if self.pooling_method == 'self_attention':
-            r1_pooling = self.self_attn(r1, mask1.squeeze(-1))
-            r2_pooling = self.self_attn(r2, mask2.squeeze(-1))
+            if self.pooling_method == 'max':
+                r1_pooling = torch.max(r1, 1)[0]
+                r2_pooling = torch.max(r2, 1)[0]
+
+            if self.pooling_method == 'self_attention':
+                r1_pooling = self.self_attn(r1, mask1.squeeze(-1))
+                r2_pooling = self.self_attn(r2, mask2.squeeze(-1))
+        else:
+            r1_pooling = self.encoder(inp1)
+            r2_pooling = self.encoder(inp2)
 
         output = None
         if self.classifier == 'cat':

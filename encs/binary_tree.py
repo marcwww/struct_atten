@@ -56,8 +56,8 @@ class BinaryTreeLSTM(nn.Module):
         self.gumbel_temperature = gumbel_temperature
         self.bidirectional = bidirectional
         self.padding_idx = padding_idx
-        self.out = nn.Linear(hidden_dim * 4, hidden_dim)
-        # self.out = nn.Linear(hidden_dim * 2, hidden_dim)
+        # self.out = nn.Linear(hidden_dim * 4, hidden_dim)
+        self.out = nn.Linear(hidden_dim * 2, hidden_dim)
 
         assert not (self.bidirectional and not self.use_leaf_rnn)
 
@@ -219,41 +219,7 @@ class BinaryTreeLSTM(nn.Module):
         nodes = torch.cat(nodes, dim=1)
         att_mask_expand = att_mask.unsqueeze(2).expand_as(nodes)
         nodes = nodes * att_mask_expand
-        # if self.intra_attention:
-        #     att_mask = torch.cat([length_mask, length_mask[:, 1:]], dim=1)
-        #     att_mask = att_mask.float()
-        #     # nodes: (batch_size, num_tree_nodes, hidden_dim)
-        #     nodes = torch.cat(nodes, dim=1)
-        #     att_mask_expand = att_mask.unsqueeze(2).expand_as(nodes)
-        #     nodes = nodes * att_mask_expand
-        #     # nodes_mean: (batch_size, hidden_dim, 1)
-        #     nodes_mean = nodes.mean(1).squeeze(1).unsqueeze(2)
-        #     # att_weights: (batch_size, num_tree_nodes)
-        #     att_weights = torch.bmm(nodes, nodes_mean).squeeze(2)
-        #     att_weights = basic.masked_softmax(
-        #         logits=att_weights, mask=att_mask)
-        #     # att_weights_expand: (batch_size, num_tree_nodes, hidden_dim)
-        #     att_weights_expand = att_weights.unsqueeze(2).expand_as(nodes)
-        #     # h: (batch_size, 1, 2 * hidden_dim)
-        #     h = (att_weights_expand * nodes).sum(1)
 
-        nodes_aligned = None
-        if self.intra_attention:
-            # nodes: (batch_size, num_tree_nodes, hidden_dim)
-            # f: (bsz, nnodes, nnodes)
-            f = nodes.matmul(nodes.transpose(1, 2))
-            mask = att_mask_expand.matmul(att_mask_expand.transpose(1,2)).gt(0).float()
-            a = F.softmax(f, dim=-1) * mask
-            z = a.sum(dim=-1)
-            z[z==0] = 1
-            a = a / z.unsqueeze(-1)
-            # nodes_aligned: (bsz, nnodes, hdim)
-            nodes_aligned = a.matmul(nodes)
-
-        # c = c.squeeze(1)
-        # c = self.out(c)
-        # h = self.out(h)
-        nodes = self.out(torch.cat([nodes, nodes_aligned], dim=-1))
-        # nodes = self.out(nodes)
+        nodes = self.out(nodes)
         return {'nodes': nodes,
                 'mask': att_mask}
