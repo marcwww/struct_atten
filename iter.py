@@ -58,6 +58,7 @@ class ForestIterator(object):
         self.shuffle = shuffle
         self.batch_idx = 0
         self.batch_num = int(self.seq_num / bsz)
+        self.tree_cache = {}
 
     def __len__(self):
         return self.batch_num
@@ -81,8 +82,14 @@ class ForestIterator(object):
                     self._restart()
                     raise StopIteration()
 
-                forest1.append(sexpr_to_tree(self.examples[idx].tree1, self.stoi, self.device))
-                forest2.append(sexpr_to_tree(self.examples[idx].tree2, self.stoi, self.device))
+                if idx not in self.tree_cache:
+                    tree1 = sexpr_to_tree(self.examples[idx].tree1, self.stoi, self.device)
+                    tree2 = sexpr_to_tree(self.examples[idx].tree2, self.stoi, self.device)
+                    self.tree_cache[idx] = (tree1, tree2)
+
+                tree1, tree2 = self.tree_cache[idx]
+                forest1.append(tree1)
+                forest2.append(tree2)
                 lbls.append(self.examples[idx].lbl)
 
             forest1 = Forest(forest1, self.device)

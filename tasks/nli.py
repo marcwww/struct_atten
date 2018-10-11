@@ -176,14 +176,20 @@ class NLI(nn.Module):
             r1_pooling = r1.sum(1) / lens1.float()
             r2_pooling = r2.sum(1) / lens2.float()
 
-        if self.pooling_method == 'max':
+        elif self.pooling_method == 'max':
             r1_pooling = torch.max(r1, 1)[0]
             r2_pooling = torch.max(r2, 1)[0]
 
-        if self.pooling_method == 'self_attention':
+        elif self.pooling_method == 'self_attention':
             r1_pooling = self.self_attn(r1, mask1.squeeze(-1))
             r2_pooling = self.self_attn(r2, mask2.squeeze(-1))
 
+        elif self.pooling_method == 'none':
+            r1_pooling = out1['h']
+            r2_pooling = out2['h']
+
+        else:
+            raise ModuleNotFoundError
 
         output = None
         if self.classifier == 'cat':

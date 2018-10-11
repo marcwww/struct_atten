@@ -126,4 +126,6 @@ class StructLSTM(nn.Module):
         output = torch.tanh(self.w_r(torch.cat([vec_sema, p, c], dim=-1)))
         output = output * mask
 
-        return {'nodes': output}
+        h = torch.max(output, 1)[0]
+        return {'h': h,
+                'nodes': output}

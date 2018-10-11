@@ -217,5 +217,7 @@ class BinaryTreeLSTM(nn.Module):
         nodes = nodes * att_mask_expand
 
         nodes = self.out(nodes)
-        return {'nodes': nodes,
+        h = self.out(h)
+        return {'h': h,
+                'nodes': nodes,
                 'mask': att_mask}

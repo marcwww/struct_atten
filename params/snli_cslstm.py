@@ -11,7 +11,8 @@ def model_opts(parser):
     group.add_argument('-dropout', type=float, default=0.2)
     group.add_argument('-fix_emb', default=True, action='store_true')
     group.add_argument('-inter_atten', default=False, action='store_true')
-    group.add_argument('-pooling', type=str, default='self_attention') # mean, max, self_attention
+    # group.add_argument('-pooling', type=str, default='self_attention') # mean, max, self_attention, none
+    group.add_argument('-pooling', type=str, default='none') # mean, max, self_attention, none
     group.add_argument('-clf', type=str, default='4way') # cat, 4way
 
 def train_opts(parser):
